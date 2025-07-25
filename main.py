@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import json
 import random
 
@@ -106,7 +106,7 @@ def reset_pw_home():
     elif request.method == "GET":
         return render_template("otp.html")
     else:
-        return jsomify({"message": "Method not allowed"}), 401
+        return jsonify({"message": "Method not allowed"}), 401
     
 
 
