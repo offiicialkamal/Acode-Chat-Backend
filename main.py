@@ -3,6 +3,8 @@ import json
 import random
 
 app=Flask("__name__")
+
+
 def provide_new_id():
     new_id = str(random.randint(100000000, 9999999999))
     # now check this id is not given to any user before
@@ -18,6 +20,54 @@ def provide_database():
     with open("users_database.json", "r") as f:   
         return json.load(f)
 
+def broadcast_message(THREAD_ID, SENDER_ID, SENDER_NAME, MESSAGE):
+    # send message through web sockets  to that thread id
+    # ill implement it later  
+    print|("message sent sucessfully")
+    return True
+
+class Thred_handler:
+    def write_message_to_group_database(THREAD_ID, SENDER_ID, SENDER_NAME, MESSAGE):
+        #write the message with the detail
+        # ill give a message id to each messsage for easy short 
+        # ill also give a time stamp for future usAGE 
+        print("created or writen to existing THREAD_ID.json file")
+        return True
+    
+    def write_message_to_group_database(MESSAGE_ID, DELETED_BY_NAME, DELETED_BY_ID)
+        print("message was deleted sucessfully")
+        return True
+
+class User_data_provider():
+    def provide_users_database(userID):
+        all_data_base = provide_database()
+        if userID in all_data_base:
+            return all_data_base.get(userID)
+        else:
+            return False
+
+    # def provide_users_email(userID):
+    #     all_data_base = provide_database()
+    #     if userID in all_data_base:
+    #         return all_data_base[userID].ge("email")
+    #     else:
+    #         print(f"{userID} not found in database")
+    #         return False
+        
+    def provide_users_data_field(userID, field_name)
+        all_data_base = provide_database()
+        if userID in list(all_data_base.keys()):
+            if data := all_data_base[userID].get(field_name):
+                return data
+            else:
+                message = f"{userID} has no data field {field_name}"
+                print(message)
+                return False
+        else:
+            message = f"{userID} not found in exicting database"
+            print(message)
+            return False
+        
 def write_in_database(data_to_update):
     old_database = provide_database()
     with open("users_database.json", "w") as f:
@@ -59,6 +109,9 @@ def create_new_account(name, email, number, DOB, password, location, dateTime):
     
     write_in_database(data)
 
+@app.route("/", methods=["GET"])
+def home():
+    return "api is alive"
 
 @app.route("/login", methods=["POST"])
 def login():
@@ -68,16 +121,18 @@ def login():
 
 @app.route("/create_new_account", methods=["GET", "POST"])
 def create_acc():
-    #collect all data and pass on write data function
-    name = request.form.get("name")
-    email = request.form.get("email")
-    password = request.form.get("password")
-    location = request.form.get("ip_info")
-    dateTime = request.form.get("dateTime")
-    number = request.form.get("number") if request.form.get("number") else "not provided"
-    DOB = request.form.get("DOB") if request.form.get("DOB") else "not provided"
-    ## now write all a=dat to the program
-    create_new_account(name, email, number, DOB, password, location, dateTime)
+    if request.method == "POST":
+        #its an api call 
+        #collect all data and pass on write data function
+        name = request.form.get("name")
+        email = request.form.get("email")
+        password = request.form.get("password")
+        location = request.form.get("ip_info")
+        dateTime = request.form.get("dateTime")
+        number = request.form.get("number") if request.form.get("number") else "not provided"
+        DOB = request.form.get("DOB") if request.form.get("DOB") else "not provided"
+        ## now write all a=dat to the program
+        create_new_account(name, email, number, DOB, password, location, dateTime)
 
 @app.route("/reset_password", methods=["GET", "POST"])
 def reset_pw_home():
@@ -108,6 +163,34 @@ def reset_pw_home():
     else:
         return jsonify({"message": "Method not allowed"}), 401
     
+# now ill wrirte A route called /send
+# its function recive chat id and and message 
+# then web socketr will broad cast that message to that specific thread id
+#  with the sender name and it s id 
+
+@app.route("messages/send", methods=["POST"])
+def send_message():
+    SENDER_ID = request.form.get('user-id')
+    COOKIE = request.form.get('cookie')
+    THREAD_ID = request.form.get("thread_id") # group id i think ill create a json file for each thread id sence i have no database
+    MESSAGE = request.form.get('message')
+
+    #now find the users database to get its cookie string 
+    # so that weell able to verify that the user is logged in or not 
+    REAL_COOKIE = User_data_provider.provide_users_data_field(SENDER_ID, "cookie")
+    if REAL_COOKIE:
+        if COOKIE and  REAL_COOKIE == COOKIE:
+            # USER AUTHENTICATED SUCESSFULLY
+            # NOW WE HAVE TO BROADCAST THAT MESSAGE TO ALL CONNECTED USERS THROUGH WEB SOCKET
+            SENDER_NAME = User_data_provider.provide_users_data_field(SENDER_ID, 'name')
+            if broadcast_message(THREAD_ID, SENDER_ID, SENDER_NAME, MESSAGE):
+                Thred_handler.write_message_to_group_database(THREAD_ID, SENDER_ID, SENDER_NAME, MESSAGE)
+                return jsonify({"message": "message sent sucessfully"}), 200
+            else:
+                return 500
+        else:
+            return jsonify({"message": "you need to login again", "redirect_login": True}), 401
+
 
 
 #ill handle all request =s in next commit
