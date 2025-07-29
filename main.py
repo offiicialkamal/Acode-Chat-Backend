@@ -1,20 +1,19 @@
 from flask import Flask, request, jsonify, render_template
+from flask_socketio import SocketIO, join_room, emit, leave_room
 import json
 import random
 
 app=Flask("__name__")
-
+socket = SocketIO(app, cors_allowed_origins="*")
 
 def provide_new_id():
     new_id = str(random.randint(100000000, 9999999999))
-    # now check this id is not given to any user before
-    # first get the database keys  list and thn check using in keyword
     old_database = provide_database()
     if new_id not in list(old_database.keys()):
         return new_id
     else:
         print("id is already avilable findng again")
-        provide_new_id()
+        return provide_new_id()
 
 def provide_database():
     with open("users_database.json", "r") as f:   
@@ -22,8 +21,16 @@ def provide_database():
 
 def broadcast_message(THREAD_ID, SENDER_ID, SENDER_NAME, MESSAGE):
     # send message through web sockets  to that thread id
-    # ill implement it later  
-    print|("message sent sucessfully")
+    # ill implement it later
+    # print|("message sent sucessfully")
+    # return True
+    socket.emit("new_message", {
+            "THREAD_ID": THREAD_ID,
+            "SENDER_ID": SENDER_ID,
+            "SENDER_NAME": SENDER_NAME,
+            "MESSAGE": MESSAGE
+        }, room=(str(THREAD_ID))
+    )
     return True
 
 class Thred_handler:
@@ -133,6 +140,8 @@ def create_acc():
         DOB = request.form.get("DOB") if request.form.get("DOB") else "not provided"
         ## now write all a=dat to the program
         create_new_account(name, email, number, DOB, password, location, dateTime)
+    elif request.method == "GET":
+        return render_template("create_account.html")
 
 @app.route("/reset_password", methods=["GET", "POST"])
 def reset_pw_home():
@@ -168,12 +177,14 @@ def reset_pw_home():
 # then web socketr will broad cast that message to that specific thread id
 #  with the sender name and it s id 
 
-@app.route("messages/send", methods=["POST"])
-def send_message():
-    SENDER_ID = request.form.get('user-id')
-    COOKIE = request.form.get('cookie')
-    THREAD_ID = request.form.get("thread_id") # group id i think ill create a json file for each thread id sence i have no database
-    MESSAGE = request.form.get('message')
+# @app.route("messages/send", methods=["POST"])
+
+@socketio.on("send_message")
+def send_message(data):
+    SENDER_ID = data.get('user-id')
+    COOKIE = data.get('cookie')
+    THREAD_ID = data.get("thread_id") # group id i think ill create a json file for each thread id sence i have no database
+    MESSAGE = data.get('message')
 
     #now find the users database to get its cookie string 
     # so that weell able to verify that the user is logged in or not 
