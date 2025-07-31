@@ -1,21 +1,75 @@
 from flask import Flask, request, jsonify, render_template
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO, emit, join_room
+from API.GENERAL.new_id import generate_id
+from API.GENERAL.cookie import generate_cookie
+from API.GENERAL.token import generate_token 
 import sqlite3, random, string
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-def db_conn():
-    return sqlite3.connect("local.db")
 
-def generate_id():
-    return str(random.randint(100000000, 9999999999))
+############################################################################
+############################################################################
+######################## PLACEHOLDER DATABASES #############################
+############################################################################
+############################################################################
+originalDatabase = {
+        "accessToken": "tyadittfiugweoyggqewoyggewoyg"
+    }
+originalMessageDatabase = {
+        "group id 1":{
+            "message id 1":{
+                "sender uid": "734736473",
+                "message": "hello brother"
+            },
+            "message id 2":{
+                "sender uid ": "56354635",
+                "message": "hello from user 2"
+            }
+        },
+        "group id 2":{
+            "message id 1":{
+                "sender uid": "734736473",
+                "message": "hello brother"
+            },
+            "message id 2":{
+                "sender uid ": "56354635",
+                "message": "hello from user 2"
+            }
+        },
+        "group id 3":{
+            "message id 1":{
+                "sender uid": "734736473",
+                "message": "hello brother"
+            },
+            "message id 2":{
+                "sender uid ": "56354635",
+                "message": "hello from user 2"
+            }
+        }
+    }
 
-def generate_cookie():
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=64))
 
-def generate_token():
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=32))
+
+
+
+
+
+
+
+
+
+
+
+def db_conn(databaseNAME):
+    if databaseNAME == "messages":
+        return sqlite3.connect("messages.db")
+    elif databaseNAME == "users":
+        return sqlite3.connect("usersDatabase.db")
+    else:
+        return 
+    
 
 @app.route("/")
 def home():
@@ -66,69 +120,50 @@ def reset_password():
                 return jsonify({"message": "User not found"}), 404
     return render_template("otp.tml")
 
-@app.route("/get_messages", methods=["POST"])
-def get_messages():
-    thread_id = request.form.get("thread_id")
-    user_id = request.form.get("user_id")
-    cookie = request.form.get("cookie")
+# @app.route("/get_messages", methods=["POST"])
+# def get_messages():
+#     thread_id = request.form.get("thread_id")
+#     user_id = request.form.get("user_id")
+#     cookie = request.form.get("cookie")
 
-    with db_conn() as conn:
-        cur = conn.execute("SELECT cookie FROM users WHERE id=?", (user_id,))
-        row = cur.fetchone()
-        if not row or row[0] != cookie:
-            return jsonify({"message": "Invalid user"}), 401
+#     with db_conn() as conn:
+#         cur = conn.execute("SELECT cookie FROM users WHERE id=?", (user_id,))
+#         row = cur.fetchone()
+#         if not row or row[0] != cookie:
+#             return jsonify({"message": "Invalid user"}), 401
 
-        messages = conn.execute(
-            "SELECT sender_id, sender_name, message, timestamp FROM messages WHERE thread_id=? ORDER BY timestamp ASC",
-            (thread_id,)
-        ).fetchall()
+#         messages = conn.execute(
+#             "SELECT sender_id, sender_name, message, timestamp FROM messages WHERE thread_id=? ORDER BY timestamp ASC",
+#             (thread_id,)
+#         ).fetchall()
 
-        return jsonify([
-            {
-                "sender_id": msg[0],
-                "sender_name": msg[1],
-                "message": msg[2],
-                "timestamp": msg[3]
-            }
-            for msg in messages
-        ])
+#         return jsonify([
+#             {
+#                 "sender_id": msg[0],
+#                 "sender_name": msg[1],
+#                 "message": msg[2],
+#                 "timestamp": msg[3]
+#             }
+#             for msg in messages
+#         ])
 
-@app.route("/get_groups", methods=["POST"])
-def get_user_groups():
-    user_id = request.form.get("user_id")
-    cookie = request.form.get("cookie")
+# @app.route("/get_groups", methods=["POST"])
+# def get_user_groups():
+#     user_id = request.form.get("user_id")
+#     cookie = request.form.get("cookie")
 
-    with db_conn() as conn:
-        cur = conn.execute("SELECT cookie FROM users WHERE id=?", (user_id,))
-        row = cur.fetchone()
-        if not row or row[0] != cookie:
-            return jsonify({"message": "Invalid session"}), 401
+#     with db_conn() as conn:
+#         cur = conn.execute("SELECT cookie FROM users WHERE id=?", (user_id,))
+#         row = cur.fetchone()
+#         if not row or row[0] != cookie:
+#             return jsonify({"message": "Invalid session"}), 401
 
-        groups = conn.execute(
-            "SELECT group_id FROM user_groups WHERE user_id=?",
-            (user_id,)
-        ).fetchall()
+#         groups = conn.execute(
+#             "SELECT group_id FROM user_groups WHERE user_id=?",
+#             (user_id,)
+#         ).fetchall()
 
-        return jsonify([g[0] for g in groups])
-
-
-
-@socketio.on("connect_user")
-def handle_user_connect(data):
-    user_id = data.get("user_id")
-    cookie = data.get("cookie")
-
-    with db_conn() as conn:
-        cur = conn.execute("SELECT cookie FROM users WHERE id=?", (user_id,))
-        row = cur.fetchone()
-        if not row or row[0] != cookie:
-            emit("error", {"message": "Invalid session"})
-            return
-
-        groups = conn.execute("SELECT group_id FROM user_groups WHERE user_id=?", (user_id,)).fetchall()
-        for (group_id,) in groups:
-            join_room(group_id)
-        emit("connected", {"joined_rooms": [g[0] for g in groups]})
+#         return jsonify([g[0] for g in groups])
 
 
 @app.route("/join_group", methods=["POST"])
@@ -147,13 +182,76 @@ def join_group():
         return jsonify({"message": f"User {user_id} joined group {group_id}"}), 200
 
 
+@socketio.on("connect_user")
+def handle_user_connect(data):
+    print(" new  user/clint has been connected ")
+#     user_id = data.get("user_id")
+#     cookie = data.get("cookie")
+
+#     with db_conn() as conn:
+#         cur = conn.execute("SELECT cookie FROM users WHERE id=?", (user_id,))
+#         row = cur.fetchone()
+#         if not row or row[0] != cookie:
+#             emit("error", {"message": "Invalid session"})
+#             return
+
+#         groups = conn.execute("SELECT group_id FROM user_groups WHERE user_id=?", (user_id,)).fetchall()
+#         for (group_id,) in groups:
+#             join_room(group_id)
+#         emit("connected", {"joined_rooms": [g[0] for g in groups]})
+
+
+
+
+
+####################################################################################
+####################################################################################
+############################# SOCKET IO ROUTES/EVENTS ##############################
+####################################################################################
+####################################################################################
+
+@socketio.on("get_all_messages")
+def wants_all_his_chats(data):
+    #clint sends a json object im storing that json object on data variable
+    print(f"sended data from clint is =>>>>> {data}")
+    UID = data.get('UID')
+    accessToken = data.get("accessToken")
+    if not UID or not accessToken:
+        return {"status_code": 401, "message": "accesToken or UID is missing"}
+    
+    ### compare the data UID and accessTokens are valid or not from database
+    if UID in [" database UIDs "] and accessToken == [" accessToken in users database "]:
+        print("user authenticated now")
+        users_all_chats_in_json = {
+            "2537623766": {
+                "name": "ITS A GROUP A NAME",
+                "admin": "74674"
+            },
+            "63476374673": {
+                "name": "its second group",
+                "admin": "3666"
+            }
+        }
+        return {"status_code": 200, "chats": users_all_chats_in_json}
+
+@socketio.on('open_a_chat')
+def wants_to_open_the_chat(data):
+    # now we have to return the all messages of that specific chat and clint should use cllbacks to recieve data, all is in json formate
+    if data:
+        if data.get("accessToken") == originalDatabase.get('accessToken'):
+            print("currect access token")
+            all_messages = originalMessageDatabase.get("groupUID")
+            return {"status_code": 200, "message": "sucess", "messages": all_messages}
+        else:
+            print("acceess denaid")
+            return {"status_code": 401, "message": "Access Denaid !"}
+
 @socketio.on("send_message")
 def handle_send_message(data):
     sender_id = data.get("user-id")
     cookie = data.get("cookie")
     thread_id = data.get("thread_id")
     message = data.get("message")
-
     with db_conn() as conn:
         cur = conn.execute("SELECT name, cookie FROM users WHERE id=?", (sender_id,))
         row = cur.fetchone()
