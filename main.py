@@ -2,7 +2,8 @@ from flask import Flask, request, jsonify, render_template
 from flask_socketio import SocketIO, emit, join_room
 from API.GENERAL.new_id import generate_id
 from API.GENERAL.cookie import generate_cookie
-from API.GENERAL.token import generate_token 
+from API.GENERAL.token import generate_token
+form API.DATABASE.database_actions import database
 import sqlite3, random, string
 
 app = Flask(__name__)
@@ -227,6 +228,28 @@ def handle_user_connect(data):
 ############################# SOCKET IO ROUTES/EVENTS ##############################
 ####################################################################################
 ####################################################################################
+@socketio.on("get_token")
+def return_the_token(data):
+    print(f"user is asking for its token ====>>>> {data}")
+    if data:
+        UID = data.get("UID")
+        COOKIE = data.get("COOKIE")
+        if UID and COOKIE:
+            if ORG_COOKIE := database.provide_cookie(UID):
+                # now user has enterd the currect cookie or not lets compare
+                if ORG_COOKIE == COOKIE:
+                    # now Asuming the user has enrterd the currect cookie
+                    # so we have to returrn the access token of him for message access
+                    ORG_ACCESS_TOKEN = database.provide_access_token(UID)
+                    return {"status_code": 200, "message": "successfully gotten token", "TOKEN": ORG_ACCESS_TOKEN}
+                else:
+                    return {"status_code": 401, "message": "invalid cookies provided ! login needed"}
+            else:
+                return {"status_code": 400, "message": "BAD REQUEST ! usder not found"}
+        else:
+            return {"status_code": 400, "message": "Acces Denaid UID or COOKIES missing !"}
+    else:
+        return {"status_code": 400, "message": "data field is missing ecpected a JSON data"}
 
 @socketio.on("get_all_messages")
 def wants_all_his_chats(data):
