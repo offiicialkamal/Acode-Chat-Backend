@@ -50,6 +50,24 @@ originalMessageDatabase = {
         }
     }
 
+usersDatbase = {
+    "1111":{
+        "name": "kamal",
+        "cookie": "hdhsuedususus",
+        "accessToken": "sujefbbddujssjsn"
+    },
+    "2222":{
+        "name": "kamal",
+        "cookie": "hdhsuedususus",
+        "accessToken": "sujefbbddujssjsn"
+    },
+    "3333":{
+        "name": "kamal",
+        "cookie": "hdhsuedususus",
+        "accessToken": "sujefbbddujssjsn"
+    }
+}
+
 
 
 
@@ -216,11 +234,12 @@ def wants_all_his_chats(data):
     print(f"sended data from clint is =>>>>> {data}")
     UID = data.get('UID')
     accessToken = data.get("accessToken")
+    
     if not UID or not accessToken:
         return {"status_code": 401, "message": "accesToken or UID is missing"}
     
     ### compare the data UID and accessTokens are valid or not from database
-    if UID in [" database UIDs "] and accessToken == [" accessToken in users database "]:
+    if UID in list(usersDatbase.keys()) and accessToken == usersDatbase[UID].get('accessToken'):
         print("user authenticated now")
         users_all_chats_in_json = {
             "2537623766": {
@@ -233,6 +252,9 @@ def wants_all_his_chats(data):
             }
         }
         return {"status_code": 200, "chats": users_all_chats_in_json}
+    else:
+        print('Access Denaid !')
+        return {"status_code": 401, "message": "Access Denaid ! invalid token you need to login again"}
 
 @socketio.on('open_a_chat')
 def wants_to_open_the_chat(data):
@@ -245,6 +267,8 @@ def wants_to_open_the_chat(data):
         else:
             print("acceess denaid")
             return {"status_code": 401, "message": "Access Denaid !"}
+    else:
+        return {"status_code": 401, "message": "Access Denaid !"}
 
 @socketio.on("send_message")
 def handle_send_message(data):
