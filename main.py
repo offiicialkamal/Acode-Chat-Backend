@@ -1,323 +1,112 @@
-from flask import Flask, request, jsonify, render_template
-from flask_socketio import SocketIO, emit, join_room
-from API.GENERAL.new_id import generate_id
-from API.GENERAL.cookie import generate_cookie
-from API.GENERAL.token import generate_token
-form API.DATABASE.database_actions import database
-import sqlite3, random, string
+from flask import Flask, request, jsonify, send_file
+from flask_cors import CORS
+from jinja2 import Environment, FileSystemLoader
+from modules.port import get_available_port
+#from modules.updater import updaterMethods
+from modules.logo import showLogo
+from appHandler import appHandler
+import os
 
+appHandler.startHandling()
+showLogo()
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*")
+CORS(app)
+portList = [1024,1025,1026,1027,1028,1029,1030,1031,1032,1033,1034]
+port = get_available_port(portList)
+jsonData = {}
+BASE_DIR = None
+template_env = None
 
-
-############################################################################
-############################################################################
-######################## PLACEHOLDER DATABASES #############################
-############################################################################
-############################################################################
-originalDatabase = {
-        "accessToken": "tyadittfiugweoyggqewoyggewoyg"
-    }
-originalMessageDatabase = {
-        "group id 1":{
-            "message id 1":{
-                "sender uid": "734736473",
-                "message": "hello brother"
-            },
-            "message id 2":{
-                "sender uid ": "56354635",
-                "message": "hello from user 2"
-            }
-        },
-        "group id 2":{
-            "message id 1":{
-                "sender uid": "734736473",
-                "message": "hello brother"
-            },
-            "message id 2":{
-                "sender uid ": "56354635",
-                "message": "hello from user 2"
-            }
-        },
-        "group id 3":{
-            "message id 1":{
-                "sender uid": "734736473",
-                "message": "hello brother"
-            },
-            "message id 2":{
-                "sender uid ": "56354635",
-                "message": "hello from user 2"
-            }
-        }
-    }
-
-usersDatbase = {
-    "1111":{
-        "name": "kamal",
-        "cookie": "hdhsuedususus",
-        "accessToken": "sujefbbddujssjsn"
-    },
-    "2222":{
-        "name": "kamal",
-        "cookie": "hdhsuedususus",
-        "accessToken": "sujefbbddujssjsn"
-    },
-    "3333":{
-        "name": "kamal",
-        "cookie": "hdhsuedususus",
-        "accessToken": "sujefbbddujssjsn"
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-def db_conn(databaseNAME):
-    if databaseNAME == "messages":
-        return sqlite3.connect("messages.db")
-    elif databaseNAME == "users":
-        return sqlite3.connect("usersDatabase.db")
-    else:
-        return 
-    
-
-@app.route("/")
+@app.route('/', methods=['GET', 'POST'])
 def home():
-    return "API is Alive"
-
-@app.route("/create_new_account", methods=["GET", "POST"])
-def create_account():
-    if request.method == "POST":
-        data = {
-            "id": generate_id(),
-            "name": request.form.get("name"),
-            "email": request.form.get("email"),
-            "number": request.form.get("number", "not provided"),
-            "dob": request.form.get("DOB", "not provided"),
-            "password": request.form.get("password"),
-            "location": request.form.get("ip_info"),
-            "cookie": generate_cookie(),
-            "accessToken": generate_token(),
-            "lastLogin": request.form.get("dateTime"),
-            "last_pw_change": request.form.get("dateTime"),
-            "accountCreationDateTime": request.form.get("dateTime")
-        }
-        with db_conn() as conn:
-            conn.execute('''
-                INSERT INTO users (id, name, email, number, dob, password, location, cookie, accessToken, lastLogin, last_pw_change, accountCreationDateTime)
-                VALUES (:id, :name, :email, :number, :dob, :password, :location, :cookie, :accessToken, :lastLogin, :last_pw_change, :accountCreationDateTime)
-            ''', data)
-        return jsonify({"message": "Account created"}), 201
-    return render_template("create_account.html")
-
-@app.route("/reset_password", methods=["POST", "GET"])
-def reset_password():
-    if request.method == "POST":
-        user_id = request.form.get("userID")
-        new_password = request.form.get("new_password")
-        otp = request.form.get("enterd_otp")
-        now = request.form.get("todays_date")
-
-        # For now, mock OTP validation (you should implement proper OTP logic)
-        if otp != "123456":
-            return jsonify({"message": "Invalid OTP"}), 401
-
-        with db_conn() as conn:
-            cur = conn.execute("UPDATE users SET password=?, last_pw_change=? WHERE id=?", (new_password, now, user_id))
-            if cur.rowcount:
-                return jsonify({"message": "Password updated"}), 200
-            else:
-                return jsonify({"message": "User not found"}), 404
-    return render_template("otp.tml")
-
-# @app.route("/get_messages", methods=["POST"])
-# def get_messages():
-#     thread_id = request.form.get("thread_id")
-#     user_id = request.form.get("user_id")
-#     cookie = request.form.get("cookie")
-
-#     with db_conn() as conn:
-#         cur = conn.execute("SELECT cookie FROM users WHERE id=?", (user_id,))
-#         row = cur.fetchone()
-#         if not row or row[0] != cookie:
-#             return jsonify({"message": "Invalid user"}), 401
-
-#         messages = conn.execute(
-#             "SELECT sender_id, sender_name, message, timestamp FROM messages WHERE thread_id=? ORDER BY timestamp ASC",
-#             (thread_id,)
-#         ).fetchall()
-
-#         return jsonify([
-#             {
-#                 "sender_id": msg[0],
-#                 "sender_name": msg[1],
-#                 "message": msg[2],
-#                 "timestamp": msg[3]
-#             }
-#             for msg in messages
-#         ])
-
-# @app.route("/get_groups", methods=["POST"])
-# def get_user_groups():
-#     user_id = request.form.get("user_id")
-#     cookie = request.form.get("cookie")
-
-#     with db_conn() as conn:
-#         cur = conn.execute("SELECT cookie FROM users WHERE id=?", (user_id,))
-#         row = cur.fetchone()
-#         if not row or row[0] != cookie:
-#             return jsonify({"message": "Invalid session"}), 401
-
-#         groups = conn.execute(
-#             "SELECT group_id FROM user_groups WHERE user_id=?",
-#             (user_id,)
-#         ).fetchall()
-
-#         return jsonify([g[0] for g in groups])
-
-
-@app.route("/join_group", methods=["POST"])
-def join_group():
-    user_id = request.form.get("user_id")
-    group_id = request.form.get("group_id")
-    cookie = request.form.get("cookie")
-
-    with db_conn() as conn:
-        cur = conn.execute("SELECT cookie FROM users WHERE id=?", (user_id,))
-        row = cur.fetchone()
-        if not row or row[0] != cookie:
-            return jsonify({"message": "Invalid user"}), 401
-
-        conn.execute("INSERT INTO user_groups (user_id, group_id) VALUES (?, ?)", (user_id, group_id))
-        return jsonify({"message": f"User {user_id} joined group {group_id}"}), 200
-
-
-@socketio.on("connect_user")
-def handle_user_connect(data):
-    print(" new  user/clint has been connected ")
-#     user_id = data.get("user_id")
-#     cookie = data.get("cookie")
-
-#     with db_conn() as conn:
-#         cur = conn.execute("SELECT cookie FROM users WHERE id=?", (user_id,))
-#         row = cur.fetchone()
-#         if not row or row[0] != cookie:
-#             emit("error", {"message": "Invalid session"})
-#             return
-
-#         groups = conn.execute("SELECT group_id FROM user_groups WHERE user_id=?", (user_id,)).fetchall()
-#         for (group_id,) in groups:
-#             join_room(group_id)
-#         emit("connected", {"joined_rooms": [g[0] for g in groups]})
-
-
-
-
-
-####################################################################################
-####################################################################################
-############################# SOCKET IO ROUTES/EVENTS ##############################
-####################################################################################
-####################################################################################
-@socketio.on("get_token")
-def return_the_token(data):
-    print(f"user is asking for its token ====>>>> {data}")
-    if data:
-        UID = data.get("UID")
-        COOKIE = data.get("COOKIE")
-        if UID and COOKIE:
-            if ORG_COOKIE := database.provide_cookie(UID):
-                # now user has enterd the currect cookie or not lets compare
-                if ORG_COOKIE == COOKIE:
-                    # now Asuming the user has enrterd the currect cookie
-                    # so we have to returrn the access token of him for message access
-                    ORG_ACCESS_TOKEN = database.provide_access_token(UID)
-                    return {"status_code": 200, "message": "successfully gotten token", "TOKEN": ORG_ACCESS_TOKEN}
-                else:
-                    return {"status_code": 401, "message": "invalid cookies provided ! login needed"}
-            else:
-                return {"status_code": 400, "message": "BAD REQUEST ! usder not found"}
+    global template_env
+    if request.method == 'GET':
+        file_name = jsonData.get('fileName')
+        if file_name and template_env:
+            template = template_env.get_template(file_name)
+            return template.render()
         else:
-            return {"status_code": 400, "message": "Acces Denaid UID or COOKIES missing !"}
+            return 'Template not configured.', 400
     else:
-        return {"status_code": 400, "message": "data field is missing ecpected a JSON data"}
+        return jsonify({"message": 'Hello, World!'}), 200
 
-@socketio.on("get_all_messages")
-def wants_all_his_chats(data):
-    #clint sends a json object im storing that json object on data variable
-    print(f"sended data from clint is =>>>>> {data}")
-    UID = data.get('UID')
-    accessToken = data.get("accessToken")
-    
-    if not UID or not accessToken:
-        return {"status_code": 401, "message": "accesToken or UID is missing"}
-    
-    ### compare the data UID and accessTokens are valid or not from database
-    if UID in list(usersDatbase.keys()) and accessToken == usersDatbase[UID].get('accessToken'):
-        print("user authenticated now")
-        users_all_chats_in_json = {
-            "2537623766": {
-                "name": "ITS A GROUP A NAME",
-                "admin": "74674"
-            },
-            "63476374673": {
-                "name": "its second group",
-                "admin": "3666"
-            }
-        }
-        return {"status_code": 200, "chats": users_all_chats_in_json}
+@app.route('/setup', methods=['PATCH'])
+def setup():
+    global BASE_DIR, jsonData, template_env
+    data = request.get_json()
+    file_name = data.get('fileName')
+    path = data.get('path')
+
+    if not file_name or not path:
+        return jsonify({'error': 'fileName and path are required'}), 400
+
+#    pathList = path.rsplit('/', 1)
+#    if len(pathList) != 2:
+#        return jsonify({'error': 'Invalid path format'}), 400
+
+#    BASE_DIR = pathList[0]
+#    template_folder = os.path.join(BASE_DIR, pathList[1])
+    template_folder = path
+    BASE_DIR = path
+    if not os.path.isdir(template_folder):
+        return jsonify({'error': 'Invalid template path'}), 400
+
+    jsonData['fileName'] = file_name
+    template_env = Environment(loader=FileSystemLoader(template_folder), auto_reload=True)
+
+    return jsonify({'message': 'Base and template path set successfully'}), 201
+
+#@app.route('/static/<path:filename>')
+#def serve_static_file(filename):
+  #  if not BASE_DIR:
+ #       return 'Base directory not set.', 400
+   # return send_from_directory(BASE_DIR, filename)
+@app.route('/<path:filepath>')
+def catch_all(filepath):
+    global BASE_DIR
+    DIR = BASE_DIR # getting a instance ig original path to make that gkobal variable uncahnged
+    if not DIR:
+        return 'BASE_DIR not set.', 400
+
+
+   # if '.' in filepath:
+   #     totalDots = filepath.count('.')
+   #     DIR = (DIR.split('/'))[:-totalDots]
+   #     DIR = '/'.join(DIR)
+   #     filepath = filepath.replace('.', '')
+
+
+    if filepath.startswith('.'):
+        slashIndex = filepath.find("/")
+        totalDots = filepath[:slashIndex].count('.')
+        newPath = filepath[slashIndex:]
+        DIR = (DIR.split('/'))[:-totalDots]
+        DIR = '/'.join(DIR)
+        filepath = newPath
+
+
+
+                                                                                                                                              
+    print('im hear boss')
+    print(DIR)
+    print(filepath)
+    print(os.path.join(DIR, filepath))
+    # Absolute path of the requested file
+    file_path = os.path.join(DIR, filepath)
+
+    if os.path.isfile(file_path):
+        return send_file(file_path)
     else:
-        print('Access Denaid !')
-        return {"status_code": 401, "message": "Access Denaid ! invalid token you need to login again"}
+        return f'File not found: {filepath}', 404
 
-@socketio.on('open_a_chat')
-def wants_to_open_the_chat(data):
-    # now we have to return the all messages of that specific chat and clint should use cllbacks to recieve data, all is in json formate
-    if data:
-        if data.get("accessToken") == originalDatabase.get('accessToken'):
-            print("currect access token")
-            all_messages = originalMessageDatabase.get("groupUID")
-            return {"status_code": 200, "message": "sucess", "messages": all_messages}
-        else:
-            print("acceess denaid")
-            return {"status_code": 401, "message": "Access Denaid !"}
-    else:
-        return {"status_code": 401, "message": "Access Denaid !"}
+@app.route('/check', methods=["GET"])
+def send_alive_signal_too_the_client():
+  if request.method == "GET":
+    print("Successfully Port Identified by the client connection process started")
+    return jsonify({"message":"Ready For 'PATCH' request","key":"AcodeLiveServer","port": f"{port}"}), 200
 
-@socketio.on("send_message")
-def handle_send_message(data):
-    sender_id = data.get("user-id")
-    cookie = data.get("cookie")
-    thread_id = data.get("thread_id")
-    message = data.get("message")
-    with db_conn() as conn:
-        cur = conn.execute("SELECT name, cookie FROM users WHERE id=?", (sender_id,))
-        row = cur.fetchone()
-        if not row:
-            emit("error", {"message": "User not found"}, room=request.sid)
-            return
-        name, real_cookie = row
-        if real_cookie != cookie:
-            emit("error", {"message": "Invalid session"}, room=request.sid)
-            return
 
-        conn.execute("INSERT INTO messages (thread_id, sender_id, sender_name, message) VALUES (?, ?, ?, ?)",
-                     (thread_id, sender_id, name, message))
-        socketio.emit("new_message", {
-            "THREAD_ID": thread_id,
-            "SENDER_ID": sender_id,
-            "SENDER_NAME": name,
-            "MESSAGE": message
-        }, room=thread_id)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=port)
 
-if __name__ == "__main__":
-    socketio.run(app, port=5000, host="0.0.0.0", allow_unsafe_werkzeug=True, debug=True)
+
