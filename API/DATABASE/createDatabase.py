@@ -1,4 +1,56 @@
 import sqlite3
+
+def connect_all_users_table():
+    with sqlite3.connect('/DB/all_users.db') as users_database:
+        return users_database
+
+    
+class create_databasde():
+    def __init__(self):
+        pass
+
+    def create_users_database(self):
+        ###  now i have to crete an unsers database/or going to write his data on all users table 
+        with connect_all_users_table() as table:
+            cursor = table.cursor()
+            cursor.execute("""CREATE TABLE IF NOT EXISTS users (
+                UID INT,
+                FIRST_NAME TEXT,
+                LAST_NAME TEXT,
+                EMAIL TEXT,
+                DOB TEXT,
+                PHONE_NO INT,
+                IP NUMBER,
+                CITY VARCHAR(10),
+                PASSWORD TEXT,
+                LAST_PW_CHANGED_ON TEXT,
+                LAST_LOGIN TEXT,
+                TOKEN TEXT,
+                COOKIE TEXT
+                JOINED_ON TEXT                
+            )""")
+
+    def create
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    
 def create_group_messages_database(THREAD_ID):
     try:
         with sqlite3.connect('DBstore/messages.db') as conn:

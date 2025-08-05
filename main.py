@@ -99,6 +99,28 @@ def db_conn(databaseNAME):
 def home():
     return "API is Alive"
 
+@app.route('/sign_up', methods=["GET","POST"])
+def signup():
+    if request.method == "POST":
+        data = request.get_json()
+        return jsonify({"message": "signup sucess plesae login", "COOKIE":"this is a  cookie", "UID":"thisd is an uid", "TOKEN": "this is an token"}),200
+    elif request.method == "GET":
+        return render_template('sign-up.html')
+    else:
+        return jsonify({"message":"method not allowed or invaled method"}), 405
+
+
+
+
+
+
+        
+
+
+
+
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == 'POST':
