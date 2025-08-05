@@ -56,16 +56,19 @@ originalMessageDatabase = {
 usersDatbase = {
     "1111":{
         "name": "kamal",
+        "email": "example1@gmail.com",
         "cookie": "hdhsuedususus",
         "accessToken": "sujefbbddujssjsn"
     },
     "2222":{
         "name": "kamal",
+        "email": "example1@gmail.com",
         "cookie": "hdhsuedususus",
         "accessToken": "sujefbbddujssjsn"
     },
     "3333":{
         "name": "kamal",
+        "email": "example1@gmail.com",
         "cookie": "hdhsuedususus",
         "accessToken": "sujefbbddujssjsn"
     }
@@ -99,8 +102,23 @@ def home():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == 'POST':
+        data = request.get_json()
         print(request)
-        return jsonify({"COOKIE": "COOKIE @ LE LO MRA LODA", "UID": "12527383838"}), 200
+        print(data)
+        
+        PROVIDED_EMAIL = data.get('EMAIL')
+        PROVIDED_PASS = data.get('PASSWORD')
+        
+        if PROVIDED_EMAIL and PROVIDED_PASS:
+            if PROVIDED_EMAIL == 'user1@gamil.com' and PROVIDED_PASS == '1234':
+                print('login sucessfull')
+                # return a dummy data for now
+                return jsonify({"COOKIE": "COOKIE@cookie.com", "UID": "12527383838"}), 200
+            else:
+                return jsonify({"message":"Invalid username or password ! "}), 401
+        else:
+            return jsonify({"message":"Invalid username or password ! "}), 401
+            
     elif request.method == 'GET':
         return render_template('login.html'), 200
 
@@ -242,16 +260,20 @@ def handle_user_connect(data):
 def return_the_token(data):
     print(f"user is asking for its token ====>>>> {data}")
     if data:
-        UID = data.get("UID")
-        COOKIE = data.get("COOKIE")
-        if UID and COOKIE:
-            if ORG_COOKIE := database.provide_cookie(UID):
+        PROVIDED_UID = data.get("UID")
+        PROVIDED_COOKIE = data.get("COOKIE")
+        
+        ORG_COOKIE = 'COOKIE@cookie.com'
+        ORG_ACCESS_TOKEN = 'THISISACCESSTOKEN'
+        
+        if PROVIDED_UID and PROVIDED_COOKIE:
+            if ORG_COOKIE:
                 # now user has enterd the currect cookie or not lets compare
-                if ORG_COOKIE == COOKIE:
+                if ORG_COOKIE == PROVIDED_COOKIE:
                     # now Asuming the user has enrterd the currect cookie
                     # so we have to returrn the access token of him for message access
-                    ORG_ACCESS_TOKEN = database.provide_access_token(UID)
-                    return {"status_code": 200, "message": "successfully gotten token", "TOKEN": ORG_ACCESS_TOKEN}
+                    print('user authenticated sucessfully and token has been sent')
+                    return {"status_code": 200, "message": "successfully gotten token", "ACCESS_TOKEN": ORG_ACCESS_TOKEN, "UID": PROVIDED_UID}
                 else:
                     return {"status_code": 401, "message": "invalid cookies provided ! login needed"}
             else:
@@ -266,21 +288,94 @@ def wants_all_his_chats(data):
     #clint sends a json object im storing that json object on data variable
     print(f"sended data from clint is =>>>>> {data}")
     UID = data.get('UID')
-    accessToken = data.get("accessToken")
+    ACCESS_TOKEN = data.get("ACCESS_TOKEN")
     
-    if not UID or not accessToken:
+    if not UID or not ACCESS_TOKEN:
         return {"status_code": 401, "message": "accesToken or UID is missing"}
     
     ### compare the data UID and accessTokens are valid or not from database
-    if UID in list(usersDatbase.keys()) and accessToken == usersDatbase[UID].get('accessToken'):
+    if UID in ["12527383838"] and ACCESS_TOKEN == 'THISISACCESSTOKEN':
         print("user authenticated now")
         users_all_chats_in_json = {
             "2537623766": {
                 "name": "ITS A GROUP A NAME",
                 "admin": "74674"
             },
-            "63476374673": {
+            "476467746788": {
                 "name": "its second group",
+                "GUID": "2578875588532214",
+                "admin": "3666"
+            },
+            "253762766": {
+                "name": "ITS A GROUP A NAME",
+                "admin": "74674"
+            },
+            "47646746788": {
+                "name": "its second group",
+                "GUID": "2578875588532214",
+                "admin": "3666"
+            },
+            "253762366": {
+                "name": "ITS A GROUP A NAME",
+                "admin": "74674"
+            },
+            "47646774688": {
+                "name": "its second group",
+                "GUID": "2578875588532214",
+                "admin": "3666"
+            },
+             "2537987623766": {
+                "name": "ITS A GROUP A NAME",
+                "admin": "74674"
+            },
+            "476467742456788": {
+                "name": "its second group",
+                "GUID": "2578875588532214",
+                "admin": "3666"
+            },
+            "25376298766": {
+                "name": "ITS A GROUP A NAME",
+                "admin": "74674"
+            },
+            "4764673546788": {
+                "name": "its second group",
+                "GUID": "2578875588532214",
+                "admin": "3666"
+            },
+            "25376245366": {
+                "name": "ITS A GROUP A NAME",
+                "admin": "74674"
+            },
+            "4764677468988": {
+                "name": "its second group",
+                "GUID": "2578875588532214",
+                "admin": "3666"
+            },
+             "2537623355766": {
+                "name": "ITS A GROUP A NAME",
+                "admin": "74674"
+            },
+            "47646774076788": {
+                "name": "its second group",
+                "GUID": "2578875588532214",
+                "admin": "3666"
+            },
+            "253765782766": {
+                "name": "ITS A GROUP A NAME",
+                "admin": "74674"
+            },
+            "47646742326788": {
+                "name": "its second group",
+                "GUID": "2578875588532214",
+                "admin": "3666"
+            },
+            "25376132366": {
+                "name": "ITS A GROUP A NAME",
+                "admin": "74674"
+            },
+            "47646774600988": {
+                "name": "its second group",
+                "GUID": "2578875588532214",
                 "admin": "3666"
             }
         }
