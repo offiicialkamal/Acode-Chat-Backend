@@ -97,11 +97,13 @@ def db_conn(databaseNAME):
 
 @app.route("/")
 def home():
+    print(request.remote_addr)
     return "API is Alive"
 
 @app.route('/sign_up', methods=["GET","POST"])
 def signup():
     if request.method == "POST":
+        print(request.remote_addr)
         data = request.get_json()
         return jsonify({"message": "signup sucess plesae login", "COOKIE":"this is a  cookie", "UID":"thisd is an uid", "TOKEN": "this is an token"}),200
     elif request.method == "GET":
