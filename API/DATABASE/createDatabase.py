@@ -1,36 +1,91 @@
 import sqlite3
 
 def connect_all_users_table():
-    with sqlite3.connect('/DB/all_users.db') as users_database:
-        return users_database
+    try:
+        with sqlite3.connect('/DB/all_users.db') as users_database:
+            return users_database
+    except Exception as e:
+        print(f"error accured during connecting to '/DB/all_users.db' ==>>> {e} ")
+        return False
 
+def connect_user_chats_list_database():
+    try:
+        with sqlite3.connect('DB/chats_list_database.db') as chats_database:
+            return chats_database
+    except Exception as e:
+        print(f"error accured while connecting to '/DB/chats_database.db' ==>>>> {e}")
+        return False 
+
+def connect_chats_tabes_database():
+    try:
+        with sqlite3.connect('/DB/chats_tables.db') as chat_database:
+            return chat_database:
+    except Exception as e:
+        print("unable to connect '/DB/chat.db'")
+        return False
     
 class create_databasde():
     def __init__(self):
         pass
 
-    def create_users_database(self):
+    @staticmethod
+    def create_users_database():
         ###  now i have to crete an unsers database/or going to write his data on all users table 
-        with connect_all_users_table() as table:
-            cursor = table.cursor()
-            cursor.execute("""CREATE TABLE IF NOT EXISTS users (
-                UID INT,
-                FIRST_NAME TEXT,
-                LAST_NAME TEXT,
-                EMAIL TEXT,
-                DOB TEXT,
-                PHONE_NO INT,
-                IP NUMBER,
-                CITY VARCHAR(10),
-                PASSWORD TEXT,
-                LAST_PW_CHANGED_ON TEXT,
-                LAST_LOGIN TEXT,
-                TOKEN TEXT,
-                COOKIE TEXT
-                JOINED_ON TEXT                
-            )""")
+        CREDENTIAL_DATABASE_CONNECTED = connect_all_users_table()
+        if CREDENTIAL_DATABASE_CONNECTED:
+            with CREDENTIAL_DATABASE_CONNECTED as table:
+                cursor = table.cursor()
+                cursor.execute("""CREATE TABLE IF NOT EXISTS uid (
+                    UID INT,
+                    FIRST_NAME TEXT,
+                    LAST_NAME TEXT,
+                    EMAIL TEXT,
+                    DOB TEXT,
+                    PHONE_NO INT,
+                    IP NUMBER,
+                    CITY VARCHAR(10),
+                    PASSWORD TEXT,
+                    LAST_PW_CHANGED_ON TEXT,
+                    LAST_LOGIN TEXT,
+                    TOKEN TEXT,
+                    COOKIE TEXT
+                    JOINED_ON TEXT                
+                )""")
+        else:
+            print('unable to communicate with Credentials database')
 
-    def create
+    @staticmethod
+    def create_chats_table_for_this_new_user():
+        CHATS_DATABASE_CONNECTED = connect_user_chats_list_database()
+        if CHATS_DATABASE_CONNECTED:
+            with CHATS_DATABASE_CONNECTED as table:
+                cursor = table.cursor()
+                cursor.execute("""CREATE TABLE IF NOT EXISTS uid (
+                                S_NO NUMBER,
+                                GUID NUMBER,
+                                GNAME TEXT
+                            )""")
+        else:
+            print('unable to comunicate with database')
+
+    @staticmethod
+    def crete_chat_database_table():
+        CHAT_DATABASE_CONNECTED = connect_chats_tables_database()
+        if CHAT_DATABASE_CONNECTED:
+            with CHAT_DATABASE_CONNECTED as chats:
+                cursor = chats.cursor()
+                # SID => SENDER ID
+                # MID => MESSAGE ID
+                # S_NAME => SENDER NAME 
+                cursor.execute("""CREATE TABLE IF NOT EXISTS guid (
+                                    MID NUMBER,
+                                    SID NUMBER,
+                                    SENDER_NAME TEXT,
+                                    MESSAGE TEXT,
+                                    TIME_STAMP DEFAULT CURRENT_TIMESTAMP                
+                                )""")
+        else:
+            print(' unable to comunicate with chat tables database')
             
 
 
