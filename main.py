@@ -4,6 +4,7 @@ from flask_cors import CORS
 from API.GENERAL.new_id import generate_id
 from API.GENERAL.cookie import generate_cookie
 from API.GENERAL.token import generate_token
+from API.DATABASE.createDatabase import create_database
 from API.DATABASE.database_actions import database
 import sqlite3, random, string
 
@@ -105,7 +106,11 @@ def signup():
     if request.method == "POST":
         print(request.remote_addr)
         data = request.get_json()
+        print(data)
+        ld = create_database.create_users_database()
+        print(ld)
         return jsonify({"message": "signup sucess plesae login", "COOKIE":"this is a  cookie", "UID":"thisd is an uid", "TOKEN": "this is an token"}),200
+        
     elif request.method == "GET":
         return render_template('sign-up.html')
     else:
