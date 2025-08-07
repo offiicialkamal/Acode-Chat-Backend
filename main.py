@@ -108,7 +108,10 @@ def signup():
         data = request.get_json()
         print(data)
         ld = create_database.create_users_database()
+        UID = create_database.create_chats_table_for_this_new_user("555555")
+      #  gg = create_database.create_chat_database_table("173533")
         print(ld)
+        print(UID)
         return jsonify({"message": "signup sucess plesae login", "COOKIE":"this is a  cookie", "UID":"thisd is an uid", "TOKEN": "this is an token"}),200
         
     elif request.method == "GET":
@@ -195,52 +198,6 @@ def reset_password():
             else:
                 return jsonify({"message": "User not found"}), 404
     return render_template("otp.tml")
-
-# @app.route("/get_messages", methods=["POST"])
-# def get_messages():
-#     thread_id = request.form.get("thread_id")
-#     user_id = request.form.get("user_id")
-#     cookie = request.form.get("cookie")
-
-#     with db_conn() as conn:
-#         cur = conn.execute("SELECT cookie FROM users WHERE id=?", (user_id,))
-#         row = cur.fetchone()
-#         if not row or row[0] != cookie:
-#             return jsonify({"message": "Invalid user"}), 401
-
-#         messages = conn.execute(
-#             "SELECT sender_id, sender_name, message, timestamp FROM messages WHERE thread_id=? ORDER BY timestamp ASC",
-#             (thread_id,)
-#         ).fetchall()
-
-#         return jsonify([
-#             {
-#                 "sender_id": msg[0],
-#                 "sender_name": msg[1],
-#                 "message": msg[2],
-#                 "timestamp": msg[3]
-#             }
-#             for msg in messages
-#         ])
-
-# @app.route("/get_groups", methods=["POST"])
-# def get_user_groups():
-#     user_id = request.form.get("user_id")
-#     cookie = request.form.get("cookie")
-
-#     with db_conn() as conn:
-#         cur = conn.execute("SELECT cookie FROM users WHERE id=?", (user_id,))
-#         row = cur.fetchone()
-#         if not row or row[0] != cookie:
-#             return jsonify({"message": "Invalid session"}), 401
-
-#         groups = conn.execute(
-#             "SELECT group_id FROM user_groups WHERE user_id=?",
-#             (user_id,)
-#         ).fetchall()
-
-#         return jsonify([g[0] for g in groups])
-
 
 @app.route("/join_group", methods=["POST"])
 def join_group():
