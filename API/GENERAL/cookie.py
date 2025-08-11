@@ -1,3 +1,4 @@
 import random
-def generate_cookie():
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=64))
+import string
+def create_cookie():
+    return 'MESSANGER__' + ''.join(random.choices(string.ascii_letters + string.digits, k=64))

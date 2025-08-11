@@ -5,7 +5,7 @@ from .connect import connect
 class create_database():
     def __init__(self):
         pass
-
+    
     @staticmethod
     def create_users_database():
         CREDENTIAL_DATABASE_CONNECTED = connect.all_users_table()
@@ -17,6 +17,7 @@ class create_database():
                     FIRST_NAME TEXT,
                     LAST_NAME TEXT,
                     EMAIL TEXT,
+                    IS_MAIL_OTP INTEGER,
                     DOB TEXT,
                     PHONE_NO TEXT,
                     IP TEXT,
@@ -43,7 +44,6 @@ class create_database():
             try:
                 cursor = CHATS_DATABASE_CONNECTED.cursor()
                 cursor.execute(f"""CREATE TABLE IF NOT EXISTS CHATS_{str(uid)} (
-                            S_NO INTEGER PRIMARY KEY AUTOINCREMENT,
                             GUID INTEGER PRIMARY KEY AUTOINCREMENT,
                             GNAME TEXT,
                             TIME_STAMP DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -58,7 +58,7 @@ class create_database():
             print('unable to comunicate with database')
 
     @staticmethod
-    def create_chat_database_table(GROUP_ID, SENDER_ID, SENDER_NAME, MESSAGE):
+    def create_chat_database_table(GROUP_ID):
       #  TABLE_NAME = str(GUID)
         CHAT_DATABASE_CONNECTED = connect.messages_database()
         if CHAT_DATABASE_CONNECTED:
@@ -66,7 +66,7 @@ class create_database():
                 cursor = CHAT_DATABASE_CONNECTED.cursor()
                 # SID => SENDER ID
                 # MID => MESSAGE ID
-                # S_NAME => SENDER NAME 
+                # S_NAME => SENDER NAME
                 cursor.execute(f"""CREATE TABLE IF NOT EXISTS G_{str(GROUP_ID)} (
                                     MESSAGE_ID INTEGER PRIMARY KEY AUTOINCREMENT,
                                     SENDER_ID INTEGER,
@@ -81,4 +81,24 @@ class create_database():
                 CHAT_DATABASE_CONNECTED.close()
         else:
             print(' unable to comunicate with chat tables database')
-            
+    
+    @staticmethod
+    def create_message_list_database():
+        try:
+            connection = connect.message_list_database()
+            if  connection:
+                cursor = connection.cursor()
+                cursor.execute("""
+                                CREATE TABLE IF NOT EXISTS all_chats (
+                                    GUID INTEGER PRIMARY KEY DEFAULT AUTOINCREMENT,
+                                    GNAME TEXT,
+                                    TIME_STAMP DATETIME DEFAULT CURRENT_TIMESTAMP
+                                )
+                                """)
+                cursor.emmit()
+        except Exception as e:
+            print(e)
+        finally:
+            cursor.close()
+    
+        

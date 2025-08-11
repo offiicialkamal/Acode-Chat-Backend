@@ -30,4 +30,13 @@ class connect:
             print(f"unable to connect '/DB/messages.db' {e}")
             return False
     
+    def message_list_database():
+        try:
+            if not os.path.exists('DB'):
+                os.makedirs('DB')
+            return sqlite3.connect('DB/all_groups.db')
+        except Exception as e:
+            print(e)
+            return False
+    
     
