@@ -200,9 +200,7 @@ def login():
                     COOKIE = get.cookie(PROVIDED_EMAIL)
                     UID = get.uid_by_email(PROVIDED_EMAIL)
                     otp = get.stored_otp(UID, COOKIE)
-                    
-                    print(f"OTP GOT {otp}")
-                    if len(f"{otp}") == '0':
+                    if len(str(otp)) == 1:
                         return jsonify({"message": "logged in sucessfully", "COOKIE": COOKIE, "UID": UID, "TOKEN": get.token(COOKIE)}),200
                     else:
                        # sendOTP(PROVIDED_EMAIL, otp, get.first_name(UID),"otpForNewAcc")
