@@ -230,7 +230,12 @@ def return_token():
             ORIGINAL_UID = get.uid_by_cookie(PROVIDED_COOKIE)
             if ORIGINAL_UID and ORIGINAL_UID == PROVIDED_UID:
                 stored_otp = get.stored_otp(ORIGINAL_UID, PROVIDED_COOKIE)
-                if len(str(stored_otp)) == 0:
+               
+               
+               
+                print(len(str(stored_otp)))
+                # print(str(stored_otp))
+                if len(str(stored_otp)) == 1:
                     return jsonify({"message":"Login sucess", "TOKEN": get.token(PROVIDED_COOKIE)}), 200
                 else:
                     #sendOTP(get.email(PROVIDED_COOKIE),str(stored_otp), get.first_name(ORIGINAL_UID),"otpForNewAcc")
