@@ -47,6 +47,20 @@ class get:
         finally:
             connection.close()
     
+    def email(COOKIE):
+        try:
+            connection = connect.all_users_table()
+            if connection:
+                cursor = connection.cursor()
+                cursor.execute("""
+                                SELECT EMAIL FROM users WHERE COOKIE=?
+                                """,(COOKIE,))
+        except Exception as e:
+            print(e)
+        finally:
+            if connection:
+                connection.close()
+    
     def cookie(EMAIL):
         try:
             connection = connect.all_users_table()
@@ -86,7 +100,7 @@ class get:
                 cursor = connection.cursor()
                 
                 cursor.execute("""
-                                SELECT UID WHERE COOKIE=?
+                                SELECT UID FROM users WHERE COOKIE=?
                                 """, (COOKIE,))
                 
                 uid = cursor.fetchone()
@@ -95,6 +109,25 @@ class get:
             print(e)
         finally:
             connection.close()
+    
+    def uid_by_token(TOKEN):
+        try:
+            connection = connect.all_users_table()
+            if connection:
+                cursor = connection.cursor()
+                cursor.execute("""
+                                SELECT UID FROM users WHERE TOKEN = ?
+                                """,(TOKEN,))
+                uid = cursor.fetchone()
+                return(uid[0])
+            else:
+                return False
+        except Exception as err:
+            print(err)
+        finally:
+            if connection:
+                connection.close()
+            
             
             
     def token(COOKIE):
@@ -131,16 +164,11 @@ class get:
                 connection.close()
                 
                 
-    def all_chats_list(UID):
+    def all_chats_json(UID):
         try:
             connection = connect.user_chats_list_database()
             if connection:
                 cursor = connection.cursor()
-                cursor.execute(f"""
-                                SELECT * FROM {UID}
-                                """)
-                
-                connection.commit()
         except Exception as e:
             print(f'erro while getting the chats of {UID} ==>> {e}')
         finally:

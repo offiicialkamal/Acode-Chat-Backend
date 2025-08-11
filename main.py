@@ -1,4 +1,3 @@
-
 from flask import Flask, request, jsonify, render_template
 from flask_socketio import SocketIO, emit, join_room
 from flask_cors import CORS
@@ -226,15 +225,16 @@ def return_token():
         data = request.get_json()
         PROVIDED_COOKIE = data.get('COOKIE')
         PROVIDED_UID = data.get('UID')
+        print(data)
         
         if PROVIDED_COOKIE and PROVIDED_UID:
             ORIGINAL_UID = get.uid_by_cookie(PROVIDED_COOKIE)
             if ORIGINAL_UID and ORIGINAL_UID == PROVIDED_UID:
                 stored_otp = get.stored_otp(ORIGINAL_UID, PROVIDED_COOKIE)
-                if len(stored_otp) == 0:
+                if len(str(stored_otp)) == "0":
                     return jsonify({"message":"Login sucess", "TOKEN": get.token(PROVIDED_COOKIE)}), 200
                 else:
-                    sendOTP(stored_otp, get.first_name(ORIGINAL_UID),"otpForNewAcc")
+                    #sendOTP(get.email(PROVIDED_COOKIE),str(stored_otp), get.first_name(ORIGINAL_UID),"otpForNewAcc")
                     return jsonify({"message": "Verification pending"}), 409
             else:
                 return jsonify({"message": "Access Denaid ! Login needed"}), 400
@@ -315,106 +315,27 @@ def handle_user_connect(data):
 #     else:
 #         return {"status_code": 400, "message": "data field is missing ecpected a JSON data"}
 
-@socketio.on("get_all_messages")
+@socketio.on("get_all_chat_list")
 def wants_all_his_chats(data):
     #clint sends a json object im storing that json object on data variable
     print(f"sended data from clint is =>>>>> {data}")
-    UID = data.get('UID')
-    ACCESS_TOKEN = data.get("ACCESS_TOKEN")
+    PROVIDED_UID = data.get('UID')
+    ACCESS_TOKEN = data.get("TOKEN")
     
-    if not UID or not ACCESS_TOKEN:
+    if not PROVIDED_UID or not ACCESS_TOKEN:
         return {"status_code": 401, "message": "accesToken or UID is missing"}
     
     ### compare the data UID and accessTokens are valid or not from database
-    if UID in ["12527383838"] and ACCESS_TOKEN == 'THISISACCESSTOKEN':
-        print("user authenticated now")
-        users_all_chats_in_json = {
-            "2537623766": {
-                "name": "ITS A GROUP A NAME",
-                "admin": "74674"
-            },
-            "476467746788": {
-                "name": "its second group",
-                "GUID": "2578875588532214",
-                "admin": "3666"
-            },
-            "253762766": {
-                "name": "ITS A GROUP A NAME",
-                "admin": "74674"
-            },
-            "47646746788": {
-                "name": "its second group",
-                "GUID": "2578875588532214",
-                "admin": "3666"
-            },
-            "253762366": {
-                "name": "ITS A GROUP A NAME",
-                "admin": "74674"
-            },
-            "47646774688": {
-                "name": "its second group",
-                "GUID": "2578875588532214",
-                "admin": "3666"
-            },
-             "2537987623766": {
-                "name": "ITS A GROUP A NAME",
-                "admin": "74674"
-            },
-            "476467742456788": {
-                "name": "its second group",
-                "GUID": "2578875588532214",
-                "admin": "3666"
-            },
-            "25376298766": {
-                "name": "ITS A GROUP A NAME",
-                "admin": "74674"
-            },
-            "4764673546788": {
-                "name": "its second group",
-                "GUID": "2578875588532214",
-                "admin": "3666"
-            },
-            "25376245366": {
-                "name": "ITS A GROUP A NAME",
-                "admin": "74674"
-            },
-            "4764677468988": {
-                "name": "its second group",
-                "GUID": "2578875588532214",
-                "admin": "3666"
-            },
-             "2537623355766": {
-                "name": "ITS A GROUP A NAME",
-                "admin": "74674"
-            },
-            "47646774076788": {
-                "name": "its second group",
-                "GUID": "2578875588532214",
-                "admin": "3666"
-            },
-            "253765782766": {
-                "name": "ITS A GROUP A NAME",
-                "admin": "74674"
-            },
-            "47646742326788": {
-                "name": "its second group",
-                "GUID": "2578875588532214",
-                "admin": "3666"
-            },
-            "25376132366": {
-                "name": "ITS A GROUP A NAME",
-                "admin": "74674"
-            },
-            "47646774600988": {
-                "name": "its second group",
-                "GUID": "2578875588532214",
-                "admin": "3666"
-            }
-        }
-        return {"status_code": 200, "chats": users_all_chats_in_json}
+    UID = get.uid_by_token(ACCESS_TOKEN)
+    if UID == PROVIDED_UID:
+        all_chats_json = get.all_chats_json(UID)
+        if all_chats_json:
+            return jsonify({"message":"Sucessfully Got Chats", "status_code":200, "chats":all_chats_json})
+        else:
+            return jsonify({"mesaage":"Internal Server Err !", "status_code": 500})
     else:
         print('Access Denaid !')
-        return {"status_code": 401, "message": "Access Denaid ! invalid token you need to login again"}
+        return jsonify({"status_code": 401, "message": "Access Denaid ! invalid token you need to login again"})
 
 @socketio.on('open_a_chat')
 def wants_to_open_the_chat(data):
