@@ -150,7 +150,7 @@ def signup():
             # retun sucess message along with cookie token and uid
             # ill add verification machenism
             
-           # sendOTP(EMAIL,IS_MAIL_OTP, FIRST_NAME,"otpForNewAcc")
+            sendOTP(EMAIL,IS_MAIL_OTP, FIRST_NAME,"otpForNewAcc")
             return jsonify({"message": "Details Got sucessfully, verification pendding !", "COOKIE":COOKIE, "UID":NEW_USERS_UID, "TOKEN":TOKEN}),200
         else:
             return jsonify({"message": "Email already Associated with another Account"}), 409
@@ -205,7 +205,7 @@ def login():
                     if len(f"{otp}") == '0':
                         return jsonify({"message": "logged in sucessfully", "COOKIE": COOKIE, "UID": UID, "TOKEN": get.token(COOKIE)}),200
                     else:
-                        sendOTP(PROVIDED_EMAIL, otp, get.first_name(UID),"otpForNewAcc")
+                       # sendOTP(PROVIDED_EMAIL, otp, get.first_name(UID),"otpForNewAcc")
                         return jsonify({"message": "Access Denaid ! Verification pending", "redirect": True}),401
                 else:
                     return jsonify({"message": "invalid password"}),401
@@ -329,13 +329,15 @@ def wants_all_his_chats(data):
     UID = get.uid_by_token(ACCESS_TOKEN)
     if UID == PROVIDED_UID:
         all_chats_json = get.all_chats_json(UID)
+        print(all_chats_json)
+        print(type(all_chats_json))
         if all_chats_json:
-            return jsonify({"message":"Sucessfully Got Chats", "status_code":200, "chats":all_chats_json})
+            return {"message":"Sucessfully Got Chats", "status_code":200, "chats":all_chats_json}
         else:
-            return jsonify({"mesaage":"Internal Server Err !", "status_code": 500})
+            return {"mesaage":"Internal Server Err !", "status_code": 500}
     else:
         print('Access Denaid !')
-        return jsonify({"status_code": 401, "message": "Access Denaid ! invalid token you need to login again"})
+        return {"status_code": 401, "message": "Access Denaid ! invalid token you need to login again"}
 
 @socketio.on('open_a_chat')
 def wants_to_open_the_chat(data):

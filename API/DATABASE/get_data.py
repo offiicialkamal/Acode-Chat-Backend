@@ -1,5 +1,6 @@
 from .connect import connect
-
+import sys
+import json
 class get:
     def all_emails():
         try:
@@ -12,6 +13,7 @@ class get:
                 return cursor.fetchall()
         except Exception as e:
             print(e)
+            return False
         finally:
             connection.close()
             
@@ -27,6 +29,7 @@ class get:
             return otp[0]
         except Exception as e:
             print(e)
+            return False
         finally:
             connection.close()
     
@@ -44,6 +47,7 @@ class get:
                 return password[0]
         except Exception as e:
             print(f'Error getting password {e}')
+            return False
         finally:
             connection.close()
     
@@ -57,6 +61,7 @@ class get:
                                 """,(COOKIE,))
         except Exception as e:
             print(e)
+            return False
         finally:
             if connection:
                 connection.close()
@@ -73,6 +78,7 @@ class get:
                 return cookie[0]
         except Exception as e:
             print(e)
+            return False
         finally:
             connection.close()
     
@@ -90,6 +96,7 @@ class get:
                 return uid[0]
         except Exception as e:
             print(e)
+            return False
         finally:
             connection.close()
     
@@ -107,6 +114,7 @@ class get:
                 return uid[0]
         except Exception as e:
             print(e)
+            return False
         finally:
             connection.close()
     
@@ -124,6 +132,7 @@ class get:
                 return False
         except Exception as err:
             print(err)
+            return False
         finally:
             if connection:
                 connection.close()
@@ -142,6 +151,7 @@ class get:
                 return token[0]
         except Exception as e:
             print(e)
+            return False
         finally:
             connection.close()
     
@@ -159,6 +169,7 @@ class get:
                 return first_name[0]
         except Exception as e:
             print(e)
+            return False
         finally:
             if connection:
                 connection.close()
@@ -169,11 +180,23 @@ class get:
             connection = connect.user_chats_list_database()
             if connection:
                 cursor = connection.cursor()
+                cursor.execute(f"""
+                                SELECT * FROM {'CHATS_'+str(UID)}
+                                """)
+                chats_json = ""
+                chats = cursor.fetchall()
+                # print(chats)
+                chats_json = {}
+                for chat in chats:
+                    chats_json[str(chat[0])] = {
+                        "NAME": chat[1],
+                        "CREATION_DATE": chat[2]
+                    }
+                return chats_json
         except Exception as e:
             print(f'erro while getting the chats of {UID} ==>> {e}')
+            return False
         finally:
             connection.close()
-            
-        
     
     
