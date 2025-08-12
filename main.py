@@ -194,21 +194,24 @@ def login():
         # print(type(PROVIDED_EMAIL))
         if PROVIDED_EMAIL and PROVIDED_PASS:
             all_emails = get.all_emails()
-            if (f'{PROVIDED_EMAIL}',) in all_emails:
-                STORED_PASSWORD = get.password(PROVIDED_EMAIL)
-                if PROVIDED_PASS == STORED_PASSWORD:
-                    COOKIE = get.cookie(PROVIDED_EMAIL)
-                    UID = get.uid_by_email(PROVIDED_EMAIL)
-                    otp = get.stored_otp(UID, COOKIE)
-                    if len(str(otp)) == 1:
-                        return jsonify({"message": "logged in sucessfully", "COOKIE": COOKIE, "UID": UID, "TOKEN": get.token(COOKIE)}),200
+            if all_emails:
+                if (f'{PROVIDED_EMAIL}',) in all_emails:
+                    STORED_PASSWORD = get.password(PROVIDED_EMAIL)
+                    if PROVIDED_PASS == STORED_PASSWORD:
+                        COOKIE = get.cookie(PROVIDED_EMAIL)
+                        UID = get.uid_by_email(PROVIDED_EMAIL)
+                        otp = get.stored_otp(UID, COOKIE)
+                        if len(str(otp)) == 1:
+                            return jsonify({"message": "logged in sucessfully", "COOKIE": COOKIE, "UID": UID, "TOKEN": get.token(COOKIE)}),200
+                        else:
+                            sendOTP(PROVIDED_EMAIL, otp, get.first_name(UID),"otpForNewAcc")
+                            return jsonify({"message": "Access Denaid ! Verification pending", "redirect": True}),401
                     else:
-                        sendOTP(PROVIDED_EMAIL, otp, get.first_name(UID),"otpForNewAcc")
-                        return jsonify({"message": "Access Denaid ! Verification pending", "redirect": True}),401
+                        return jsonify({"message": "invalid password"}),401
                 else:
-                    return jsonify({"message": "invalid password"}),401
+                    return jsonify({"message": "No account associated with provided account"}), 401
             else:
-                return jsonify({"message": "No account associated with provided account"}), 401
+                return jsonify({"message":"Internal Server Err ;"}), 500
         else:
             return jsonify({"message":"Access Denaid ! Email or password missing"}), 401
     elif request.method == 'GET':
