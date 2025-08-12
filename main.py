@@ -203,7 +203,7 @@ def login():
                     if len(str(otp)) == 1:
                         return jsonify({"message": "logged in sucessfully", "COOKIE": COOKIE, "UID": UID, "TOKEN": get.token(COOKIE)}),200
                     else:
-                       # sendOTP(PROVIDED_EMAIL, otp, get.first_name(UID),"otpForNewAcc")
+                        sendOTP(PROVIDED_EMAIL, otp, get.first_name(UID),"otpForNewAcc")
                         return jsonify({"message": "Access Denaid ! Verification pending", "redirect": True}),401
                 else:
                     return jsonify({"message": "invalid password"}),401
