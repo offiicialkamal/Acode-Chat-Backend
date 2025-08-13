@@ -231,9 +231,6 @@ def return_token():
             ORIGINAL_UID = get.uid_by_cookie(PROVIDED_COOKIE)
             if ORIGINAL_UID and ORIGINAL_UID == PROVIDED_UID:
                 stored_otp = get.stored_otp(ORIGINAL_UID, PROVIDED_COOKIE)
-               
-               
-               
                 print(len(str(stored_otp)))
                 # print(str(stored_otp))
                 if len(str(stored_otp)) == 1:
@@ -281,7 +278,7 @@ def return_token():
 #             return jsonify({"message": "Invalid user"}), 401
 
 #         conn.execute("INSERT INTO user_groups (user_id, group_id) VALUES (?, ?)", (user_id, group_id))
-#         return jsonify({"message": f"User {user_id} joined group {group_id}"}), 200
+#         return jsonify({"message": f"User {user_id} ed group {group_id}"}), 200
 
 
 @socketio.on("connect_user")
@@ -336,6 +333,14 @@ def wants_all_his_chats(data):
         all_chats_json = get.all_chats_json(UID)
         print(all_chats_json)
         print(type(all_chats_json))
+        
+        # join the all groups
+        # so that in send_messsage event rout can 
+        # broadcast the message to that group and this usesr will able to lisen for new messaages
+        for room_id in all_chats_json.keys():
+            join_room(room_id)
+            print(f"user {UID} enterd in room {room_id}")
+            
         if all_chats_json:
             return {"message":"Sucessfully Got Chats", "status_code":200, "chats":all_chats_json}
         else:
@@ -344,45 +349,66 @@ def wants_all_his_chats(data):
         print('Access Denaid !')
         return {"status_code": 401, "message": "Access Denaid ! invalid token you need to login again"}
 
-@socketio.on('open_a_chat')
-def wants_to_open_the_chat(data):
-    # now we have to return the all messages of that specific chat and clint should use cllbacks to recieve data, all is in json formate
-    if data:
-        if data.get("accessToken") == originalDatabase.get('accessToken'):
-            print("currect access token")
-            all_messages = originalMessageDatabase.get("groupUID")
-            return {"status_code": 200, "message": "sucess", "messages": all_messages}
-        else:
-            print("acceess denaid")
-            return {"status_code": 401, "message": "Access Denaid !"}
-    else:
-        return {"status_code": 401, "message": "Access Denaid !"}
+@socketio.on('send_message')
+def handle_new_message(data):
+    print(data)
+    sender_id = data.get('sender_id')
+    message = data.get('message')
+    group_id = data.get('group_id')
+    
+    if sender_id and message:
+        print(sender_id, message)
+        socketio.emit('new_message', {
+            "sender_id": sender_id,
+            "message": message
+        }, room=group_id)
+        return {"message": "message sent sucessfully", "status_code":200}
+    
+    
+    
 
-@socketio.on("send_message")
-def handle_send_message(data):
-    sender_id = data.get("user-id")
-    cookie = data.get("cookie")
-    thread_id = data.get("thread_id")
-    message = data.get("message")
-    with db_conn() as conn:
-        cur = conn.execute("SELECT name, cookie FROM users WHERE id=?", (sender_id,))
-        row = cur.fetchone()
-        if not row:
-            emit("error", {"message": "User not found"}, room=request.sid)
-            return
-        name, real_cookie = row
-        if real_cookie != cookie:
-            emit("error", {"message": "Invalid session"}, room=request.sid)
-            return
 
-        conn.execute("INSERT INTO messages (thread_id, sender_id, sender_name, message) VALUES (?, ?, ?, ?)",
-                     (thread_id, sender_id, name, message))
-        socketio.emit("new_message", {
-            "THREAD_ID": thread_id,
-            "SENDER_ID": sender_id,
-            "SENDER_NAME": name,
-            "MESSAGE": message
-        }, room=thread_id)
+
+# @socketio.on('open_a_chat')
+# def wants_to_open_the_chat(data):
+#     # now we have to return the all messages of that specific chat and clint should use cllbacks to recieve data, all is in json formate
+#     if data:
+#         if data.get("accessToken") == originalDatabase.get('accessToken'):
+#             print("currect access token")
+#             all_messages = originalMessageDatabase.get("groupUID")
+#             return {"status_code": 200, "message": "sucess", "messages": all_messages}
+#         else:
+#             print("acceess denaid")
+#             return {"status_code": 401, "message": "Access Denaid !"}
+#     else:
+#         return {"status_code": 401, "message": "Access Denaid !"}
+
+
+# @socketio.on("send_message")
+# def handle_send_message(data):
+#     sender_id = data.get("user-id")
+#     cookie = data.get("cookie")
+#     thread_id = data.get("thread_id")
+#     message = data.get("message")
+#     with db_conn() as conn:
+#         cur = conn.execute("SELECT name, cookie FROM users WHERE id=?", (sender_id,))
+#         row = cur.fetchone()
+#         if not row:
+#             emit("error", {"message": "User not found"}, room=request.sid)
+#             return
+#         name, real_cookie = row
+#         if real_cookie != cookie:
+#             emit("error", {"message": "Invalid session"}, room=request.sid)
+#             return
+
+#         conn.execute("INSERT INTO messages (thread_id, sender_id, sender_name, message) VALUES (?, ?, ?, ?)",
+#                      (thread_id, sender_id, name, message))
+#         socketio.emit("new_message", {
+#             "THREAD_ID": thread_id,
+#             "SENDER_ID": sender_id,
+#             "SENDER_NAME": name,
+#             "MESSAGE": message
+#         }, room=thread_id)
 
 if __name__ == "__main__":
     socketio.run(app, port=5000, host="0.0.0.0", allow_unsafe_werkzeug=True, debug=True)
