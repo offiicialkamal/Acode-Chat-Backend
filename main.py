@@ -360,14 +360,14 @@ def handle_new_message(data):
         print(sender_id, message)
         socketio.emit('new_message', {
             "sender_id": sender_id,
-            "message": message
+            "message": message,
+            "group_id": group_id,
+            "message_id": "message_id",
+            "time_stamp": "time_stamp"
         }, room=group_id)
         return {"message": "message sent sucessfully", "status_code":200}
     
     
-    
-
-
 
 # @socketio.on('open_a_chat')
 # def wants_to_open_the_chat(data):
