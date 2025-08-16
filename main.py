@@ -88,10 +88,6 @@ usersDatbase = {
 
 
 
-
-
-
-
 def db_conn(databaseNAME):
     if databaseNAME == "messages":
         return sqlite3.connect("messages.db")
@@ -149,7 +145,6 @@ def signup():
             write_in_database.add_user_in_group(NEW_USERS_UID, DEFAULT_CHAT_UID, DEFAULT_CHAT_NAME)
             # retun sucess message along with cookie token and uid
             # ill add verification machenism
-            
             sendOTP(EMAIL,IS_MAIL_OTP, FIRST_NAME,"otpForNewAcc")
             return jsonify({"message": "Details Got sucessfully, verification pendding !", "COOKIE":COOKIE, "UID":NEW_USERS_UID, "TOKEN":TOKEN}),200
         else:
@@ -244,6 +239,36 @@ def return_token():
             return jsonify({"mesaage":"Access Denaid ! missing cookie or uid"})
     else:
         return jsonify({"message": "Access Denaid ! imvalid method"}), 405
+
+
+
+@app.route('/get_all_users', methods=["POST"])
+def return_all_avilable_users():
+    if request.method == 'POST':
+        auth = request.get_json()
+        print(auth)
+        TOKEN = auth.get('TOKEN')
+        UID = auth.get('UID')
+        if TOKEN and UID:
+            CURRECT_UID = get.uid_by_token(TOKEN)
+            if CURRECT_UID == UID:
+                all_users_arr = get.all_users()
+                print(all_users_arr)
+                data = {}
+                if all_users_arr:
+                    for user in all_users_arr:
+                        data[user[2]]= {
+                            "NAME": ' '.join([user[0], user[1]])
+                        }
+                    return data
+                else:
+                    return jsonify({"message":"unable fo fetch users"}),404
+            else:
+                return jsonify({"message": "Access Denid ! authentication faild"}),401
+        else:
+            return jsonify({"message":" Accss Denaid ! login needed"}),401
+    else:
+        return jsonify({"message":"method mot allowed"}),405
 
 # @app.route("/reset_password", methods=["POST", "GET"])
 # def reset_password():
@@ -348,6 +373,7 @@ def wants_all_his_chats(data):
     else:
         print('Access Denaid !')
         return {"status_code": 401, "message": "Access Denaid ! invalid token you need to login again"}
+
 
 @socketio.on('send_message')
 def handle_new_message(data):

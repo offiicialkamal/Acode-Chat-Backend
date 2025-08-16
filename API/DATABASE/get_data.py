@@ -16,6 +16,24 @@ class get:
             return False
         finally:
             connection.close()
+    
+    def all_users():
+        try:
+            connection = connect.all_users_table()
+            if connection:
+                cursor = connection.cursor()
+                cursor.execute("""
+                                SELECT FIRST_NAME, LAST_NAME, UID FROM users
+                                """)
+            all_users_arr = cursor.fetchall()
+            return all_users_arr
+        except Exception as e:
+            print(f'error while fetching all users {e}')
+            return False
+        finally:
+            if connection:
+                connection.close()
+            
             
     def stored_otp(UID, COOKIE):
         try:
@@ -198,4 +216,4 @@ class get:
             return False
         finally:
             connection.close()
-    
+
