@@ -62,7 +62,9 @@ class write_in_database:
     # this will add grpup to users table
     # this table will named by each users UID
     # this table will be returned to show all chat list for user
-    def add_user_in_group(UID ,GUID, GNAME):
+    def add_user_in_group(RAW_UID ,RAW_GUID, GNAME):
+        UID = int(RAW_UID)
+        GUID = int(RAW_GUID)
         try:
             ## uid is hader or name of create_chats_table_for_this_new_user
             ## GUID is groups uniq id

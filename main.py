@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, render_template
-from flask_socketio import SocketIO, emit, join_room
+from flask_socketio import SocketIO, emit, join_room, rooms
 from flask_cors import CORS
 # from API.GENERAL.new_id import generate_id
 from API.GENERAL.cookie import create_cookie
@@ -364,6 +364,7 @@ def wants_all_his_chats(data):
         # broadcast the message to that group and this usesr will able to lisen for new messaages
         for room_id in all_chats_json.keys():
             join_room(room_id)
+            # print(type(room_id))
             print(f"user {UID} enterd in room {room_id}")
             
         if all_chats_json:
@@ -376,7 +377,7 @@ def wants_all_his_chats(data):
 
 
 @socketio.on('send_message')
-def handle_new_message(data):
+def send_message(data):
     print(data)
     sender_id = data.get('sender_id')
     message = data.get('message')
@@ -392,7 +393,37 @@ def handle_new_message(data):
             "time_stamp": "time_stamp"
         }, room=group_id)
         return {"message": "message sent sucessfully", "status_code":200}
+        
+        
+@socketio.on('send_message_new_chat')
+def send_message_new_chat(data):
+    print("this is new xhat",data)
+    sid = request.sid
+   
+    #print(type(rooms(sid)))
+    sender_id = data.get('sender_id')
+    message = data.get('message')
+    group_id = data.get('group_id')
     
+    if group_id not in rooms(sid):
+        join_room(group_id)
+        print("runnig first")
+        write_in_database.add_user_in_group(sender_id, group_id, get.first_name(group_id.split("_")[1]) + " " + get.last_name(group_id.split("_")[1]))
+        print("runnig second")
+        write_in_database.add_user_in_group(group_id.split("_")[1], group_id, get.first_name(group_id.split("_")[0]) + " " + get.last_name(group_id.split("_")[0]))
+    
+    if sender_id and message:
+        print(sender_id, message)
+        socketio.emit('new_message', {
+            "sender_id": sender_id,
+            "message": message,
+            "group_id": group_id,
+            "message_id": "message_id",
+            "time_stamp": "time_stamp"
+        }, room=group_id)
+        return {"message": "message sent sucessfully", "status_code":200}
+        
+      
     
 
 # @socketio.on('open_a_chat')

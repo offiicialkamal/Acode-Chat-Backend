@@ -38,12 +38,13 @@ class create_database():
             print('unable to communicate with Credentials database')
 
     @staticmethod
-    def create_chats_table_for_this_new_user(uid):
+    def create_chats_table_for_this_new_user(RAW_UID):
+        UID = str(RAW_UID)
         CHATS_DATABASE_CONNECTED = connect.user_chats_list_database()
         if CHATS_DATABASE_CONNECTED:
             try:
                 cursor = CHATS_DATABASE_CONNECTED.cursor()
-                cursor.execute(f"""CREATE TABLE IF NOT EXISTS CHATS_{str(uid)} (
+                cursor.execute(f"""CREATE TABLE IF NOT EXISTS CHATS_{str(UID)} (
                             GUID INTEGER PRIMARY KEY AUTOINCREMENT,
                             GNAME TEXT,
                             TIME_STAMP DATETIME DEFAULT CURRENT_TIMESTAMP

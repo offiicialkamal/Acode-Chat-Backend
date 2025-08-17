@@ -35,7 +35,8 @@ class get:
                 connection.close()
             
             
-    def stored_otp(UID, COOKIE):
+    def stored_otp(RAW_UID, COOKIE):
+        UID = int(RAW_UID)
         try:
             connection = connect.all_users_table()
             cursor = connection.cursor()
@@ -173,7 +174,8 @@ class get:
         finally:
             connection.close()
     
-    def first_name(UID):
+    def first_name(RAW_UID):
+        UID = int(RAW_UID)
         try:
             connection = connect.all_users_table()
             if connection:
@@ -192,8 +194,23 @@ class get:
             if connection:
                 connection.close()
                 
+    def last_name(RAW_UID):
+        UID = int(RAW_UID)
+        try:
+            connection = connect.all_users_table()
+            if connection:
+                cursor = connection.cursor()
+                cursor.execute("""
+                                SELECT LAST_NAME FROM users WHERE UID = ?
+                                """,(UID,))
+                return cursor.fetchone()[0]
+        except Exception as e:
+            print(e)
+        finally:
+            connection.close()
                 
-    def all_chats_json(UID):
+    def all_chats_json(RAW_UID):
+        UID = int(RAW_UID)
         try:
             connection = connect.user_chats_list_database()
             if connection:
