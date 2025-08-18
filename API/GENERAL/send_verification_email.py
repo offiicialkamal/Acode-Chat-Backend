@@ -80,17 +80,18 @@ def send_anonymous_email(to_email, subject, message):
     }
     try:
         response = requests.post(url, headers=headers, data=data)
+        return response
     except Exception as e:
         print(e)
     
-    if response.status_code == 200:
-        print(f"Email sent successfully from IP: {random_ip} using device: {random_user_agent}")
+    # if response.status_code == 200:
+    #     print(f"Email sent successfully from IP: {random_ip} using device: {random_user_agent}")
     # elif response.status_code == 429:
     #     print(f"Rate limit hit! Waiting before retrying... Status code: {response.status_code}")
-    #     time.sleep(10)  # Wait for 10 seconds before retrying
-    #     return send_anonymous_email(to_email, subject, message)
-    else:
-        print(f"Failed to send email. Status code: {response.status_code}")
+    #     return "Rate limit hit!", response
+    # else:
+    #     print(f"Failed to send email. Status code: {response.status_code}")
+    #     return "Failed to send email", response
 
 def sendOTP(to_email, otp_to_send, first_name, mode):
     print(otp_to_send)
@@ -100,7 +101,7 @@ def sendOTP(to_email, otp_to_send, first_name, mode):
         content = content.replace('[OTP CODE]', str(otp_to_send))
         content = content.replace('[Recipient Name]', first_name)
         subject = 'Verify Your messanger - AX Account'
-        send_anonymous_email(to_email, subject, content)
+        return send_anonymous_email(to_email, subject, content)
     # elif mode == 'otpForResetPwd':
     #     content = content1
     #     content = content.replace('[OTP CODE]', otp_to_send)

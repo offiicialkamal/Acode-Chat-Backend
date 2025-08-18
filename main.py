@@ -132,21 +132,35 @@ def signup():
             FIRST_NAME = data.get('FIRST_NAME')
             LAST_NAME = data.get('LAST_NAME')
             DOB = data.get('DOB')
-            PHONE_NO = int(data.get('PHONE_NO'))
+            if data.get('PHONE_NO').isdigit():
+                PHONE_NO = int(data.get('PHONE_NO'))
+            else:
+                return jsonify({"message": "Invalid PHONE_NO providede"})
             PASSWORD = data.get('PASSWORD')
             IP = data['IP_INFO'].get('ip')
             CITY = data['IP_INFO'].get('city')
             IS_MAIL_OTP = generate_otp()
             TOKEN = create_token()
             COOKIE = create_cookie()
-            # write all data in database
-            NEW_USERS_UID = write_in_database.add_user(FIRST_NAME, LAST_NAME, EMAIL, IS_MAIL_OTP, DOB, PHONE_NO, IP, CITY,PASSWORD, TOKEN, COOKIE)
-            ## add to defaul chat group
-            write_in_database.add_user_in_group(NEW_USERS_UID, DEFAULT_CHAT_UID, DEFAULT_CHAT_NAME)
+            if not (FIRST_NAME or LAST_NAME or DOB):
+                return jsonify({"message": "missing Details"}),400
+            for ch in FIRST_NAME + LAST_NAME:
+                if not ((ch<='z' and ch>='a') or (ch<='Z' and ch>='A')):
+                    return jsonify({"message": "Only alphabets allowed in names"}),400
+            
             # retun sucess message along with cookie token and uid
             # ill add verification machenism
-            sendOTP(EMAIL,IS_MAIL_OTP, FIRST_NAME,"otpForNewAcc")
-            return jsonify({"message": "Details Got sucessfully, verification pendding !", "COOKIE":COOKIE, "UID":NEW_USERS_UID, "TOKEN":TOKEN}),200
+            otp_response = sendOTP(EMAIL,IS_MAIL_OTP, FIRST_NAME,"otpForNewAcc")
+            if otp_response.status_code == 200:
+                NEW_USERS_UID = write_in_database.add_user(FIRST_NAME, LAST_NAME, EMAIL, IS_MAIL_OTP, DOB, PHONE_NO, IP, CITY,PASSWORD, TOKEN, COOKIE)
+                write_in_database.add_user_in_group(NEW_USERS_UID, DEFAULT_CHAT_UID, DEFAULT_CHAT_NAME)
+                return jsonify({"message": "Details Got sucessfully, verification pendding !", "COOKIE":COOKIE, "UID":NEW_USERS_UID, "TOKEN":TOKEN}),200
+            elif otp_response.status_code == 429:
+                return jsonify({"message": "Faild ! Too much requets wait amd retry after 20 minitus"}),429
+            elif otp_response.status_code == 400:
+                return jsonify({"mesaage":"Plase check Email"}),400
+            else:
+                return jsonify({"message": otp_response.message}), otp_response.status_code
         else:
             return jsonify({"message": "Email already Associated with another Account"}), 409
     elif request.method == "GET":
