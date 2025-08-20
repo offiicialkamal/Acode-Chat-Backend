@@ -1,7 +1,10 @@
 #content://com.android.externalstorage.documents/tree/primary%3AACODE%20samsung%20phone%2FACODE::primary:ACODE samsung phone/ACODE/Acode-Chat-Backend/API/GENERAL/send_verification_email.pyimport random
-import requests
 import random
 import time
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
 
 content1 = """
 Hi [Recipient Name],
@@ -33,84 +36,83 @@ Messanger - Ax
 """
 
 
-# Function to generate a random IP address
-def generate_random_ip():
-    return '.'.join(str(random.randint(1, 255)) for _ in range(4))
-
-# Function to generate a random user agent
-def generate_random_user_agent():
-    os_choices = [
-        # Windows
-        lambda: f"Windows NT {random.choice(['10.0; Win64; x64', '6.1; WOW64', '11.0; Win64; x64'])}",
-        # Mac
-        lambda: f"Macintosh; Intel Mac OS X {random.randint(10, 13)}_{random.randint(0, 9)}_{random.randint(0, 9)}",
-        # Linux
-        lambda: f"X11; Linux {random.choice(['x86_64', 'i686', 'armv7l'])}",
-        # Android
-        lambda: f"Linux; Android {random.randint(7, 14)}; {random.choice(['Pixel', 'Samsung Galaxy', 'OnePlus', 'Xiaomi'])}{random.randint(1,9)}",
-        # iOS
-        lambda: f"iPhone; CPU iPhone OS {random.randint(12, 17)}_{random.randint(0,9)} like Mac OS X"
-    ]
-
-    browser_choices = [
-        # Chrome
-        lambda: f"Chrome/{random.randint(80, 124)}.0.{random.randint(1000, 9999)}.{random.randint(10, 999)}",
-        # Firefox
-        lambda: f"Firefox/{random.randint(80, 124)}.0",
-        # Safari (WebKit-based)
-        lambda: f"Version/{random.randint(10, 17)}.0 Safari/{random.randint(500, 999)}.{random.randint(1,9)}"
-    ]
-
-    os_part = random.choice(os_choices)()
-    browser_part = random.choice(browser_choices)()
-    
-    # Add dynamic AppleWebKit version for realism
-    webkit_version = f"AppleWebKit/{random.randint(500, 605)}.{random.randint(1,50)}"
-
-    # Timestamp-based seed to ensure uniqueness across runs
-    unique_build = str(int(time.time() * 1000))[-6:]
-
-    return f"Mozilla/5.0 ({os_part}) {webkit_version} (KHTML, like Gecko) {browser_part}.{unique_build}"
-
 # Function to send anonymous email with random device and location
-def send_anonymous_email(to_email, subject, message):
-    url = "https://api.proxynova.com/v1/send_email"  # Correct endpoint
-    from_email = "hackesofice@gamil.com"
-    random_user_agent = generate_random_user_agent()
-    random_ip = generate_random_ip()
-    
-    headers = {                                                                                                                                                 
-        'User-Agent': random_user_agent,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Origin': 'https://www.proxynova.com',
-        'Referer': 'https://www.proxynova.com/',
-        'X-Forwarded-For': random_ip,
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Accept-Language': 'en-IN,en-GB;q=0.9,en-US;q=0.8,en;q=0.7',
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
-    }
-
-    data = {
-        'to': to_email,
-        'from': from_email,
-        'subject': subject,
-        'message': message
-    }
+def send_email(to_email, subject, body):
+    result = {"status": False, "status_code": None, "message": ""}
+    EMAIL = "hackesofice1@gmail.com"
+    APP_PASSWORD = "wkykvotccroxxgdh"
     try:
-        response = requests.post(url, headers=headers, data=data)
-        return response
+        # --- Build Email ---
+        msg = MIMEMultipart()
+        msg["From"] = EMAIL
+        msg["To"] = to_email
+        msg["Subject"] = subject
+        msg.attach(MIMEText(body, "plain"))
+
+        # --- Connect to Gmail SMTP ---
+        server = smtplib.SMTP("smtp.gmail.com", 587, timeout=20)
+        server.ehlo()
+        server.starttls()
+        server.ehlo()
+        server.login(EMAIL, APP_PASSWORD)
+
+        # --- Try Sending ---
+        refused = server.sendmail(EMAIL, to_email, msg.as_string())
+        server.quit()
+
+        if refused:  # Gmail rejected recipient immediately
+            result["status"] = False
+            result["status_code"] = 400
+            result["message"] = f"Recipient refused: {refused}"
+        else:
+            result["status"] = True
+            result["status_code"] = 200
+            result["message"] = "Email accepted by Gmail (delivery not guaranteed)"
+
+    # --- Error Handling Section ---
+    except smtplib.SMTPAuthenticationError as e:
+        result["status"] = False
+        result["status_code"] = e.smtp_code
+        result["message"] = f"Authentication failed: {e.smtp_error.decode()}"
+    except smtplib.SMTPRecipientsRefused as e:
+        result["status"] = False
+        result["status_code"] = 400
+        result["message"] = f"All recipients were refused: {e.recipients}"
+    except smtplib.SMTPSenderRefused as e:
+        result["status"] = False
+        result["status_code"] = 400
+       # result["status_code"] = e.smtp_code
+        result["message"] = f"Sender address refused: {e.smtp_error.decode()}"
+    except smtplib.SMTPDataError as e:
+        result["status"] = False
+        result["status_code"] = 429
+        # result["status_code"] = e.smtp_code
+        result["message"] = f"SMTP data error: {e.smtp_error.decode()}"
+    except smtplib.SMTPConnectError as e:
+        result["status"] = False
+        # result["status_code"] = e.smtp_code
+        result["status_code"] = 429
+        result["message"] = f"Connection error: {e.smtp_error.decode()}"
+    except smtplib.SMTPHeloError as e:
+        result["status"] = False
+        result["status_code"] = 429
+        # result["status_code"] = e.smtp_code
+        result["message"] = f"Server did not reply properly to HELO: {e.smtp_error.decode()}"
+    except smtplib.SMTPNotSupportedError as e:
+        result["status"] = False
+        result["status_code"] = 400
+        result["message"] = f"SMTP feature not supported: {str(e)}"
+    except smtplib.SMTPException as e:
+        result["status"] = False
+        result["status_code"] = 400
+        result["message"] = f"General SMTP error: {str(e)}"
     except Exception as e:
-        print(e)
-    
-    # if response.status_code == 200:
-    #     print(f"Email sent successfully from IP: {random_ip} using device: {random_user_agent}")
-    # elif response.status_code == 429:
-    #     print(f"Rate limit hit! Waiting before retrying... Status code: {response.status_code}")
-    #     return "Rate limit hit!", response
-    # else:
-    #     print(f"Failed to send email. Status code: {response.status_code}")
-    #     return "Failed to send email", response
+        result["status"] = False
+        result["status_code"] = 400
+        result["message"] = f"Unexpected error: {str(e)}"
+
+    return result
+
 
 def sendOTP(to_email, otp_to_send, first_name, mode):
     print(otp_to_send)
@@ -120,7 +122,7 @@ def sendOTP(to_email, otp_to_send, first_name, mode):
         content = content.replace('[OTP CODE]', str(otp_to_send))
         content = content.replace('[Recipient Name]', first_name)
         subject = 'Verify Your messanger - AX Account'
-        return send_anonymous_email(to_email, subject, content)
+        return send_email(to_email, subject, content)
     # elif mode == 'otpForResetPwd':
     #     content = content1
     #     content = content.replace('[OTP CODE]', otp_to_send)

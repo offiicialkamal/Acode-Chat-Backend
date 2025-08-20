@@ -151,16 +151,16 @@ def signup():
             # retun sucess message along with cookie token and uid
             # ill add verification machenism
             otp_response = sendOTP(EMAIL,IS_MAIL_OTP, FIRST_NAME,"otpForNewAcc")
-            if otp_response.status_code == 200:
+            if otp_response.get("status_code") == 200:
                 NEW_USERS_UID = write_in_database.add_user(FIRST_NAME, LAST_NAME, EMAIL, IS_MAIL_OTP, DOB, PHONE_NO, IP, CITY,PASSWORD, TOKEN, COOKIE)
                 write_in_database.add_user_in_group(NEW_USERS_UID, DEFAULT_CHAT_UID, DEFAULT_CHAT_NAME)
                 return jsonify({"message": "Details Got sucessfully, verification pendding !", "COOKIE":COOKIE, "UID":NEW_USERS_UID, "TOKEN":TOKEN}),200
-            elif otp_response.status_code == 429:
+            elif otp_response.get("status_code") == 429:
                 return jsonify({"message": "Faild ! Too much requets wait amd retry after 20 minitus"}),429
-            elif otp_response.status_code == 400:
+            elif otp_response.get("status_code") == 400:
                 return jsonify({"message":"Plase check Email"}),400
             else:
-                return jsonify({"message": "faild to send otp", "otp_status": otp_response}), otp_response.status_code
+                return jsonify({"message": "faild to send otp", "otp_status": otp_response}), otp_response.get("status_code")
         else:
             return jsonify({"message": "Email already Associated with another Account"}), 409
     elif request.method == "GET":
@@ -300,14 +300,14 @@ def resend_otp():
             print(FIRST_NAME)
             if EMAIL and otp and FIRST_NAME:
                 otp_response = sendOTP(EMAIL, otp, FIRST_NAME,"otpForNewAcc")
-                if otp_response.status_code == 200:
+                if otp_response.get("status_code") == 200:
                     return jsonify({"message": "OTP sent sucessfully"}),200
-                elif otp_response.status_code == 429:
+                elif otp_response.get("status_code") == 429:
                     return jsonify({"message": "Faild ! Too much requets wait amd retry after 20 minitus"}),429
-                elif otp_response.status_code == 400:
+                elif otp_response.get("status_code") == 400:
                     return jsonify({"message":"Plase check Email"}),400
                 else:
-                    return jsonify({"message":"Something went wrong", "otp_status": otp_response}), otp_response.status_code
+                    return jsonify({"message":"Something went wrong", "otp_status": otp_response}), otp_response.get("status_code")
             else:
                 return jsonify({"message":"unable to get data from database"}),501
         else:
@@ -460,11 +460,10 @@ def wants_all_his_chats(data):
 def send_message(data):
     print(data)
     sender_id = data.get('sender_id')
-    sender_name = data.get('sender_name')
     message = data.get('message')
     group_id = data.get('group_id')
     
-    
+    sender_name = get.first_name(sender_id)
     if sender_id and message:
         print(sender_id, message)
         message_id, time_stamp = write_in_database.store_this_message(group_id, sender_id, sender_name, message)
@@ -472,6 +471,7 @@ def send_message(data):
         print(message_id, time_stamp)
         socketio.emit('new_message', {
             "sender_id": sender_id,
+            "sender_name": sender_name,
             "message": message,
             "group_id": group_id,
             "message_id": message_id,
@@ -489,14 +489,13 @@ def send_message_new_chat(data):
    
     #print(type(rooms(sid)))
     sender_id = data.get('sender_id')
-    sender_name = data.get('sender_name')
     message = data.get('message')
     group_id = data.get('group_id')
     reciever_id = group_id.rsplit('0000000000000000')[1]
     print(group_id)
     print(type(group_id))
     
-
+    sender_name = get.first_name(sender_id)
     if group_id not in rooms(sid):
         join_room(group_id)
         print("runnig first")
