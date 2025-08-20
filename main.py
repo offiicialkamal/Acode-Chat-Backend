@@ -11,12 +11,12 @@ from API.GENERAL.send_verification_email import sendOTP
 from API.DATABASE.write_data import write_in_database
 from API.DATABASE.get_data import get
 from API.DATABASE.update_data import update
+from GLOBAL_DATABASE_API.data_pusher import clone_replace_push_data
 import sqlite3, random, string, time
-
+import requests
 app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
-
 
 ############################################################################
 ############################################################################
@@ -88,20 +88,32 @@ usersDatbase = {
 
 
 
-def db_conn(databaseNAME):
-    if databaseNAME == "messages":
-        return sqlite3.connect("messages.db")
-    elif databaseNAME == "users":
-        return sqlite3.connect("usersDatabase.db")
-    else:
-        return 
+# def db_conn(databaseNAME):
+#     if databaseNAME == "messages":
+#         return sqlite3.connect("messages.db")
+#     elif databaseNAME == "users":
+#         return sqlite3.connect("usersDatabase.db")
+#     else:
+#         return 
     
 
 @app.route("/")
 def home():
     print(request.remote_addr)
+    requests.get('https://parental-kelci-nothinghjn-df173882.koyeb.app/quick_quick_save_data_to_database_repository')
+    clone_replace_push_data(commit_databases=False)
     return "API is Alive"
+  
+@app.route('/uptime')
+def uptime():
+    return "im alive boss"
 
+@app.route('/quick_quick_save_data_to_database_repository', methods=["GET"])
+def data_saver_main():
+    clone_replace_push_data()
+    return "done cloned and pushed successfully"
+    
+    
 @app.route('/sign_up', methods=["GET","POST"])
 def signup():
     DEFAULT_CHAT_UID = None
