@@ -41,8 +41,8 @@ def push_changes(clone_dir, branch, commit_msg="Updated files via script"):
             "safe.directory", os.path.abspath(clone_dir)
         ])
         
-        run_cmd(["git", "config", "--global", "users.email", "indianhalper@gmail.com"])
-        run_cmd(["git", "config", "--global", "users.name", "offiicialkamal"])
+        run_cmd(["git", "config", "--global", "user.email", "indianhalper@gmail.com"])
+        run_cmd(["git", "config", "--global", "user.name", "offiicialkamal"])
 
         # Stage changes
         run_cmd(["git", "add", "."], cwd=clone_dir)
