@@ -1,7 +1,9 @@
 from .connect import connect
+from .createDatabase import create_database
 import sys
 import json
 class get:
+    create_database.create_users_database()
     def all_emails():
         try:
             connection = connect.all_users_table()
@@ -78,6 +80,8 @@ class get:
                 cursor.execute("""
                                 SELECT EMAIL FROM users WHERE COOKIE=?
                                 """,(COOKIE,))
+                email = cursor.fetchone()
+                return email[0]
         except Exception as e:
             print(e)
             return False
@@ -233,4 +237,33 @@ class get:
             return False
         finally:
             connection.close()
-
+    
+    def all_messages_json(limit, guid):
+        try:
+            connection = connect.messages_database()
+            if connection:
+                cursor = connection.cursor()
+                cursor.execute(f"""
+                                SELECT * FROM (
+                                 SELECT * FROM G_{str(guid)} 
+                                 ORDER BY MESSAGE_ID DESC
+                                 LIMIT {limit}
+                                 ) sub 
+                                 ORDER BY MESSAGE_ID ASC
+                                """)
+                messages_of_this_group_in_json_dict = {}
+                rows_list_type = cursor.fetchall()
+                print(rows_list_type)
+                for row_tupple in rows_list_type:
+                    messages_of_this_group_in_json_dict[str(row_tupple[0])] = {
+                            "sender_id": row_tupple[1],
+                            "sender_name": row_tupple[2],
+                            "message":row_tupple[3],
+                            "time_stamp": row_tupple[4]
+                        }
+                return messages_of_this_group_in_json_dict
+        except Exception as e:
+            print(e)
+            return False
+        finally:
+            connection.close()

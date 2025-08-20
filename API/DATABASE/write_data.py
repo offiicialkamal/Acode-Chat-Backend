@@ -94,12 +94,21 @@ class write_in_database:
             cursor.execute(f"""
                     INSERT INTO G_{GROUP_ID} (SENDER_ID, SENDER_NAME, MESSAGE)
                     VALUES(?, ?, ?)
-            """, SENDER_ID, SENDER_NAME, MESSAGE)
+            """, (int(SENDER_ID), SENDER_NAME, MESSAGE))
+            connection.commit()
+            MESSAGE_ID = cursor.lastrowid
+            cursor.execute(f"""
+                            SELECT TIME_STAMP FROM G_{str(GROUP_ID)} WHERE MESSAGE_ID = ?
+                            """,(MESSAGE_ID,))
             
-            cursor.commit()
+            result = cursor.fetchone()
+            print(result)
+            return MESSAGE_ID, result[0]
         except Exception as e:
             print(e)
+            return False, False
         finally:
-            cursor.close()
+            if connection:
+                connection.close()
 
 

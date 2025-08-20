@@ -30,8 +30,10 @@ class create_database():
                     JOINED_ON DATETIME DEFAULT CURRENT_TIMESTAMP                
                 )""")
                 CREDENTIAL_DATABASE_CONNECTED.commit()
+                return True
             except Exception as e:
                 print(e)
+                return False
             finally:
                 CREDENTIAL_DATABASE_CONNECTED.close()
         else:
@@ -50,6 +52,7 @@ class create_database():
                             TIME_STAMP DATETIME DEFAULT CURRENT_TIMESTAMP
                         )""")
                 CHATS_DATABASE_CONNECTED.commit()
+                return True
             except Exception as e:
                 print(e)
                 return False
@@ -73,11 +76,13 @@ class create_database():
                                     SENDER_ID INTEGER,
                                     SENDER_NAME TEXT,
                                     MESSAGE TEXT,
-                                    TIME_STAMP DATETIME DEFAULT TIME_STAMP                
+                                    TIME_STAMP DATETIME DEFAULT CURRENT_TIMESTAMP               
                                 )""")
                 CHAT_DATABASE_CONNECTED.commit()
+                return True
             except Exception as e:
                 print(e)
+                return False
             finally:
                 CHAT_DATABASE_CONNECTED.close()
         else:
@@ -96,9 +101,11 @@ class create_database():
                                     TIME_STAMP DATETIME DEFAULT CURRENT_TIMESTAMP
                                 )
                                 """)
-                cursor.emmit()
+                connection.commit()
+                return True
         except Exception as e:
             print(e)
+            return False
         finally:
             cursor.close()
     

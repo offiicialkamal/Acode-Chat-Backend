@@ -40,18 +40,37 @@ def generate_random_ip():
 # Function to generate a random user agent
 def generate_random_user_agent():
     os_choices = [
-        'Windows NT 10.0; Win64; x64', 'Windows NT 6.1; WOW64',
-        'Macintosh; Intel Mac OS X 10_15_7', 'X11; Linux x86_64',
-        'Android 10; Mobile', 'iPhone; CPU iPhone OS 14_0 like Mac OS X'
+        # Windows
+        lambda: f"Windows NT {random.choice(['10.0; Win64; x64', '6.1; WOW64', '11.0; Win64; x64'])}",
+        # Mac
+        lambda: f"Macintosh; Intel Mac OS X {random.randint(10, 13)}_{random.randint(0, 9)}_{random.randint(0, 9)}",
+        # Linux
+        lambda: f"X11; Linux {random.choice(['x86_64', 'i686', 'armv7l'])}",
+        # Android
+        lambda: f"Linux; Android {random.randint(7, 14)}; {random.choice(['Pixel', 'Samsung Galaxy', 'OnePlus', 'Xiaomi'])}{random.randint(1,9)}",
+        # iOS
+        lambda: f"iPhone; CPU iPhone OS {random.randint(12, 17)}_{random.randint(0,9)} like Mac OS X"
     ]
-    browser_choices = [
-        'Chrome/{}.0.{}.{}'.format(random.randint(80, 124), random.randint(1000, 9999), random.randint(100, 999)),
-        'Firefox/{}.0'.format(random.randint(80, 124)),                                                                                                         'Safari/{}.15'.format(random.randint(600, 999))
-    ]
-    os = random.choice(os_choices)
-    browser = random.choice(browser_choices)
 
-    return f"Mozilla/5.0 ({os}) AppleWebKit/537.36 (KHTML, like Gecko) {browser} Safari/537.36"
+    browser_choices = [
+        # Chrome
+        lambda: f"Chrome/{random.randint(80, 124)}.0.{random.randint(1000, 9999)}.{random.randint(10, 999)}",
+        # Firefox
+        lambda: f"Firefox/{random.randint(80, 124)}.0",
+        # Safari (WebKit-based)
+        lambda: f"Version/{random.randint(10, 17)}.0 Safari/{random.randint(500, 999)}.{random.randint(1,9)}"
+    ]
+
+    os_part = random.choice(os_choices)()
+    browser_part = random.choice(browser_choices)()
+    
+    # Add dynamic AppleWebKit version for realism
+    webkit_version = f"AppleWebKit/{random.randint(500, 605)}.{random.randint(1,50)}"
+
+    # Timestamp-based seed to ensure uniqueness across runs
+    unique_build = str(int(time.time() * 1000))[-6:]
+
+    return f"Mozilla/5.0 ({os_part}) {webkit_version} (KHTML, like Gecko) {browser_part}.{unique_build}"
 
 # Function to send anonymous email with random device and location
 def send_anonymous_email(to_email, subject, message):

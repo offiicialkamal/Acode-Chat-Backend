@@ -158,9 +158,9 @@ def signup():
             elif otp_response.status_code == 429:
                 return jsonify({"message": "Faild ! Too much requets wait amd retry after 20 minitus"}),429
             elif otp_response.status_code == 400:
-                return jsonify({"mesaage":"Plase check Email"}),400
+                return jsonify({"message":"Plase check Email"}),400
             else:
-                return jsonify({"message": otp_response.message}), otp_response.status_code
+                return jsonify({"message": "faild to send otp", "otp_status": otp_response}), otp_response.status_code
         else:
             return jsonify({"message": "Email already Associated with another Account"}), 409
     elif request.method == "GET":
@@ -284,6 +284,72 @@ def return_all_avilable_users():
     else:
         return jsonify({"message":"method mot allowed"}),405
 
+        
+@app.route('/resend_otp', methods=["POST"])
+def resend_otp():
+    if request.method =='POST':
+        data = request.get_json()
+        COOKIE = data.get('COOKIE')
+        UID = data.get('UID')
+        if get.uid_by_cookie(COOKIE) == UID:
+            otp = get.stored_otp(UID, COOKIE)
+            EMAIL = get.email(COOKIE)
+            FIRST_NAME = get.first_name(UID)
+            print(otp)
+            print(EMAIL)
+            print(FIRST_NAME)
+            if EMAIL and otp and FIRST_NAME:
+                otp_response = sendOTP(EMAIL, otp, FIRST_NAME,"otpForNewAcc")
+                if otp_response.status_code == 200:
+                    return jsonify({"message": "OTP sent sucessfully"}),200
+                elif otp_response.status_code == 429:
+                    return jsonify({"message": "Faild ! Too much requets wait amd retry after 20 minitus"}),429
+                elif otp_response.status_code == 400:
+                    return jsonify({"message":"Plase check Email"}),400
+                else:
+                    return jsonify({"message":"Something went wrong", "otp_status": otp_response}), otp_response.status_code
+            else:
+                return jsonify({"message":"unable to get data from database"}),501
+        else:
+            return jsonify({"mesaage": "authentication faild"}),401
+    else:
+        return jsonify({"message":"method not allowed"}),405
+
+
+@app.route('/get_old_messages', methods= ["POST"])
+def get_old_messages():
+    if request.method == "POST":
+        data = request.get_json()
+        COOKIE = data.get('COOKIE')
+        UID = data.get('UID')
+        if get.uid_by_cookie(COOKIE) == UID:
+            limit = 30
+            ## find all the chats of user
+            all_chats_json = get.all_chats_json(UID)
+            ## now get the message
+            print()
+            print()
+            print()
+            print()
+            print()
+            print()
+            print()
+            print(all_chats_json.keys())
+            groups_messages = {}
+            for guid in all_chats_json.keys():
+                all_messages_dict_type = get.all_messages_json(limit, guid)
+                #now append to this group data on all group dict
+                if all_messages_dict_type:
+                    groups_messages[str(guid)] = all_messages_dict_type
+                else:
+                    print(f"err while getting data of group ==>> {guid} and err is {all_messages_dict_type}")
+            print(groups_messages)
+            return jsonify({"message":"sucessfully got messags of all chats","groups_messages":groups_messages}),200
+        else:
+            return jsonify({"message": "Access Denaid ! auth faild"})
+            
+
+
 # @app.route("/reset_password", methods=["POST", "GET"])
 # def reset_password():
 #     if request.method == "POST":
@@ -394,18 +460,25 @@ def wants_all_his_chats(data):
 def send_message(data):
     print(data)
     sender_id = data.get('sender_id')
+    sender_name = data.get('sender_name')
     message = data.get('message')
     group_id = data.get('group_id')
     
+    
     if sender_id and message:
         print(sender_id, message)
+        message_id, time_stamp = write_in_database.store_this_message(group_id, sender_id, sender_name, message)
+        
+        print(message_id, time_stamp)
         socketio.emit('new_message', {
             "sender_id": sender_id,
             "message": message,
             "group_id": group_id,
-            "message_id": "message_id",
-            "time_stamp": "time_stamp"
+            "message_id": message_id,
+            "time_stamp": time_stamp
         }, room=group_id)
+        
+        
         return {"message": "message sent sucessfully", "status_code":200}
         
         
@@ -416,29 +489,35 @@ def send_message_new_chat(data):
    
     #print(type(rooms(sid)))
     sender_id = data.get('sender_id')
+    sender_name = data.get('sender_name')
     message = data.get('message')
     group_id = data.get('group_id')
+    reciever_id = group_id.rsplit('0000000000000000')[1]
+    print(group_id)
+    print(type(group_id))
     
+
     if group_id not in rooms(sid):
         join_room(group_id)
         print("runnig first")
-        write_in_database.add_user_in_group(sender_id, group_id, get.first_name(group_id.split("_")[1]) + " " + get.last_name(group_id.split("_")[1]))
-        print("runnig second")
-        write_in_database.add_user_in_group(group_id.split("_")[1], group_id, get.first_name(group_id.split("_")[0]) + " " + get.last_name(group_id.split("_")[0]))
-    
+        #write in senders chat list
+        write_in_database.add_user_in_group(sender_id, group_id, get.first_name(reciever_id) + " " + get.last_name(reciever_id))
+        #write in recievers xhat list
+        write_in_database.add_user_in_group(reciever_id, group_id, get.first_name(sender_id) + " " + get.last_name(sender_id))
+        
+    # write message and get the message_id and time_stamp
+    message_id, time_stamp = write_in_database.store_this_message(group_id, sender_id, sender_name, message)
     if sender_id and message:
         print(sender_id, message)
         socketio.emit('new_message', {
             "sender_id": sender_id,
             "message": message,
             "group_id": group_id,
-            "message_id": "message_id",
-            "time_stamp": "time_stamp"
+            "message_id": message_id,
+            "time_stamp": time_stamp
         }, room=group_id)
         return {"message": "message sent sucessfully", "status_code":200}
-        
-      
-    
+
 
 # @socketio.on('open_a_chat')
 # def wants_to_open_the_chat(data):
