@@ -15,7 +15,7 @@ class update:
                 connection.commit()
                 return True
         except Exception as e:
-            print(e)
+            print(f"err while upgrading otp {e}")
         finally:
             if connection:
                 connection.close()

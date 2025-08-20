@@ -46,10 +46,10 @@ class get:
                             SELECT IS_MAIL_OTP FROM users WHERE COOKIE = ? AND UID = ?
                             """, (COOKIE,UID,))
             otp = cursor.fetchone()
-            print(otp[0])
+            # print(otp[0])
             return otp[0]
         except Exception as e:
-            print(e)
+            print(f"unable to get stored otp {e}")
             return False
         finally:
             connection.close()
