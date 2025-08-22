@@ -3,3 +3,4 @@ flask_socketio
 Flask_Cors
 requests
 gunicorn
+pg8000

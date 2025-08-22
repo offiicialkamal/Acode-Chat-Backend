@@ -1,12 +1,13 @@
-from .connect import connect
+from .connect import database_connection
 from .createDatabase import create_database
+from datetime import datetime
 import sys
 import json
 class get:
     create_database.create_users_database()
     def all_emails():
         try:
-            connection = connect.all_users_table()
+            connection = database_connection.getconn()
             if connection:
                 cursor = connection.cursor()
                 cursor.execute("""
@@ -14,209 +15,225 @@ class get:
                                 """)
                 return cursor.fetchall()
         except Exception as e:
-            print(e)
+            print("error on all_emails():",e)
             return False
         finally:
-            connection.close()
+            if connection:
+                database_connection.putconn(connection)
     
     def all_users():
         try:
-            connection = connect.all_users_table()
+            connection = database_connection.getconn()
             if connection:
                 cursor = connection.cursor()
                 cursor.execute("""
                                 SELECT FIRST_NAME, LAST_NAME, UID FROM users
                                 """)
             all_users_arr = cursor.fetchall()
+            cursor.close()
             return all_users_arr
         except Exception as e:
             print(f'error while fetching all users {e}')
             return False
         finally:
             if connection:
-                connection.close()
+                database_connection.putconn(connection)
             
             
     def stored_otp(RAW_UID, COOKIE):
         UID = int(RAW_UID)
         try:
-            connection = connect.all_users_table()
+            connection = database_connection.getconn()
             cursor = connection.cursor()
             cursor.execute("""
-                            SELECT IS_MAIL_OTP FROM users WHERE COOKIE = ? AND UID = ?
+                            SELECT IS_MAIL_OTP FROM users WHERE COOKIE = %s AND UID = %s
                             """, (COOKIE,UID,))
             otp = cursor.fetchone()
+            cursor.close()
             # print(otp[0])
             return otp[0]
         except Exception as e:
             print(f"unable to get stored otp {e}")
             return False
         finally:
-            connection.close()
+            if connection:
+                database_connection.putconn(connection)
     
     def password(EMAIL):
         try:
-            connection = connect.all_users_table()
+            connection = database_connection.getconn()
             if connection:
                 cursor = connection.cursor()
                 cursor.execute("""
-                                SELECT PASSWORD FROM users WHERE EMAIL=?
+                                SELECT PASSWORD FROM users WHERE EMAIL=%s
                                 """,(EMAIL,))
                 password = cursor.fetchone()
-                type(password)
-                print(password)
+                cursor.close()
                 return password[0]
         except Exception as e:
-            print(f'Error getting password {e}')
+            print(f'Error on password(EMAIL): {e}')
             return False
         finally:
-            connection.close()
+            if connection:
+                database_connection.putconn(connection)
     
     def email(COOKIE):
         try:
-            connection = connect.all_users_table()
+            connection = database_connection.getconn()
             if connection:
                 cursor = connection.cursor()
                 cursor.execute("""
-                                SELECT EMAIL FROM users WHERE COOKIE=?
+                                SELECT EMAIL FROM users WHERE COOKIE=%s
                                 """,(COOKIE,))
                 email = cursor.fetchone()
+                cursor.close()
                 return email[0]
         except Exception as e:
-            print(e)
+            print(" eeror on email(COOKIE):",e)
             return False
         finally:
             if connection:
-                connection.close()
+                database_connection.putconn(connection)
     
     def cookie(EMAIL):
         try:
-            connection = connect.all_users_table()
+            connection = database_connection.getconn()
             if connection:
                 cursor = connection.cursor()
                 cursor.execute("""
-                                SELECT COOKIE FROM users WHERE EMAIL=?
+                                SELECT COOKIE FROM users WHERE EMAIL=%s
                                 """,(EMAIL,))
                 cookie = cursor.fetchone()
+                cursor.close()
                 return cookie[0]
         except Exception as e:
-            print(e)
+            print(" error on cookie(EMAIL):",e)
             return False
         finally:
-            connection.close()
+            if connection:
+                database_connection.putconn(connection)
     
     def uid_by_email(EMAIL):
         try:
-            connection = connect.all_users_table()
+            connection = database_connection.getconn()
             if connection:
                 cursor = connection.cursor()
                 
                 cursor.execute("""
-                                SELECT UID FROM users WHERE EMAIL=?
+                                SELECT UID FROM users WHERE EMAIL=%s
                                 """, (EMAIL,))
                 
                 uid = cursor.fetchone()
+                cursor.close()
                 return uid[0]
         except Exception as e:
-            print(e)
+            print(" err on uid_by_email(EMAIL):", e)
             return False
         finally:
-            connection.close()
+            if connection:
+                database_connection.putconn(connection)
     
     def uid_by_cookie(COOKIE):
         try:
-            connection = connect.all_users_table()
+            connection = database_connection.getconn()
             if connection:
                 cursor = connection.cursor()
                 
                 cursor.execute("""
-                                SELECT UID FROM users WHERE COOKIE=?
+                                SELECT UID FROM users WHERE COOKIE=%s
                                 """, (COOKIE,))
                 
                 uid = cursor.fetchone()
+                cursor.close()
                 return uid[0]
         except Exception as e:
-            print(e)
+            print("err on uid_by_cookie(COOKIE):", e)
             return False
         finally:
-            connection.close()
+            if connection:
+                database_connection.putconn(connection)
     
     def uid_by_token(TOKEN):
         try:
-            connection = connect.all_users_table()
+            connection = database_connection.getconn()
             if connection:
                 cursor = connection.cursor()
                 cursor.execute("""
-                                SELECT UID FROM users WHERE TOKEN = ?
+                                SELECT UID FROM users WHERE TOKEN = %s
                                 """,(TOKEN,))
                 uid = cursor.fetchone()
+                cursor.close()
                 return(uid[0])
             else:
                 return False
         except Exception as err:
-            print(err)
+            print(" err on uid_by_token()",err)
             return False
         finally:
             if connection:
-                connection.close()
+                database_connection.putconn(connection)
             
             
             
     def token(COOKIE):
         try:
-            connection = connect.all_users_table()
+            connection = database_connection.getconn()
             if connection:
                 cursor = connection.cursor()
                 cursor.execute("""
-                                SELECT TOKEN FROM users WHERE COOKIE=?
+                                SELECT TOKEN FROM users WHERE COOKIE=%s
                                 """,(COOKIE,))
                 token = cursor.fetchone()
+                cursor.close()
                 return token[0]
         except Exception as e:
-            print(e)
+            print("err on token(COOKIE):",e)
             return False
         finally:
-            connection.close()
+            if connection:
+                database_connection.putconn(connection)
     
     def first_name(RAW_UID):
         UID = int(RAW_UID)
         try:
-            connection = connect.all_users_table()
+            connection = database_connection.getconn()
             if connection:
                 cursor = connection.cursor()
                 cursor.execute("""
                                 SELECT FIRST_NAME 
                                 FROM users 
-                                WHERE UID = ?
+                                WHERE UID = %s
                                 """,(UID,))
                 first_name = cursor.fetchone()
+                cursor.close()
                 return first_name[0]
         except Exception as e:
-            print(e)
+            print(" err on first_name(RAW_UID):", e)
             return False
         finally:
             if connection:
-                connection.close()
+                database_connection.putconn(connection)
                 
     def last_name(RAW_UID):
         UID = int(RAW_UID)
         try:
-            connection = connect.all_users_table()
+            connection = database_connection.getconn()
             if connection:
                 cursor = connection.cursor()
                 cursor.execute("""
-                                SELECT LAST_NAME FROM users WHERE UID = ?
+                                SELECT LAST_NAME FROM users WHERE UID = %s
                                 """,(UID,))
                 return cursor.fetchone()[0]
         except Exception as e:
-            print(e)
+            print("err on last_name() ", e)
         finally:
-            connection.close()
+            if connection:
+                database_connection.putconn(connection)
                 
     def all_chats_json(RAW_UID):
         UID = int(RAW_UID)
         try:
-            connection = connect.user_chats_list_database()
+            connection = database_connection.getconn()
             if connection:
                 cursor = connection.cursor()
                 cursor.execute(f"""
@@ -229,18 +246,20 @@ class get:
                 for chat in chats:
                     chats_json[str(chat[0])] = {
                         "NAME": chat[1],
-                        "CREATION_DATE": chat[2]
+                        "CREATION_DATE": chat[2].isoformat()
                     }
+                cursor.close()
                 return chats_json
         except Exception as e:
             print(f'erro while getting the chats of {UID} ==>> {e}')
             return False
         finally:
-            connection.close()
+            if connection:
+                database_connection.putconn(connection)
     
     def all_messages_json(limit, guid):
         try:
-            connection = connect.messages_database()
+            connection = database_connection.getconn()
             if connection:
                 cursor = connection.cursor()
                 cursor.execute(f"""
@@ -259,11 +278,13 @@ class get:
                             "sender_id": row_tupple[1],
                             "sender_name": row_tupple[2],
                             "message":row_tupple[3],
-                            "time_stamp": row_tupple[4]
+                            "time_stamp": row_tupple[4].isoformat()
                         }
+                cursor.close()
                 return messages_of_this_group_in_json_dict
         except Exception as e:
-            print(e)
+            print('err on "all_messages_json"',e)
             return False
         finally:
-            connection.close()
+            if connection:
+                database_connection.putconn(connection)

@@ -355,6 +355,7 @@ def get_old_messages():
                     groups_messages[str(guid)] = all_messages_dict_type
                 else:
                     print(f"err while getting data of group ==>> {guid} and err is {all_messages_dict_type}")
+                    return jsonify({"message": "cant able to fetch old messages"}), 400
             print(groups_messages)
             return jsonify({"message":"sucessfully got messags of all chats","groups_messages":groups_messages}),200
         else:
