@@ -100,8 +100,8 @@ usersDatbase = {
 @app.route("/")
 def home():
     print(request.remote_addr)
-    requests.get('https://parental-kelci-nothinghjn-df173882.koyeb.app/quick_quick_save_data_to_database_repository')
-    clone_replace_push_data(commit_databases=False)
+    # requests.get('https://parental-kelci-nothinghjn-df173882.koyeb.app/quick_quick_save_data_to_database_repository')
+    # clone_replace_push_data(commit_databases=False)
     return "API is Alive"
   
 @app.route('/uptime')
