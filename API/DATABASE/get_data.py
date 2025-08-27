@@ -272,7 +272,7 @@ class get:
                                 """)
                 messages_of_this_group_in_json_dict = {}
                 rows_list_type = cursor.fetchall()
-                print(rows_list_type)
+                #print(rows_list_type)
                 for row_tupple in rows_list_type:
                     messages_of_this_group_in_json_dict[str(row_tupple[0])] = {
                             "sender_id": row_tupple[1],

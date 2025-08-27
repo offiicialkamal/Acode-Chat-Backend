@@ -12,7 +12,7 @@ from API.DATABASE.write_data import write_in_database
 from API.DATABASE.get_data import get
 from API.DATABASE.update_data import update
 from GLOBAL_DATABASE_API.data_pusher import clone_replace_push_data
-import sqlite3, random, string, time
+import sqlite3, random, string, time,os
 import requests
 app = Flask(__name__)
 CORS(app)
@@ -116,6 +116,7 @@ def data_saver_main():
     
 @app.route('/sign_up', methods=["GET","POST"])
 def signup():
+    otp_response = None
     DEFAULT_CHAT_UID = None
     DEFAULT_CHAT_NAME = None
     NEW_USERS_UID = None
@@ -163,6 +164,7 @@ def signup():
             # retun sucess message along with cookie token and uid
             # ill add verification machenism
             otp_response = sendOTP(EMAIL,IS_MAIL_OTP, FIRST_NAME,"otpForNewAcc")
+            print(otp_response)
             if otp_response.get("status_code") == 200:
                 NEW_USERS_UID = write_in_database.add_user(FIRST_NAME, LAST_NAME, EMAIL, IS_MAIL_OTP, DOB, PHONE_NO, IP, CITY,PASSWORD, TOKEN, COOKIE)
                 write_in_database.add_user_in_group(NEW_USERS_UID, DEFAULT_CHAT_UID, DEFAULT_CHAT_NAME)
@@ -247,12 +249,12 @@ def return_token():
         data = request.get_json()
         PROVIDED_COOKIE = data.get('COOKIE')
         PROVIDED_UID = data.get('UID')
-        print(data)
+        #print(data)
         if PROVIDED_COOKIE and PROVIDED_UID:
             ORIGINAL_UID = get.uid_by_cookie(PROVIDED_COOKIE)
             if ORIGINAL_UID and ORIGINAL_UID == PROVIDED_UID:
                 stored_otp = get.stored_otp(ORIGINAL_UID, PROVIDED_COOKIE)
-                print(len(str(stored_otp)))
+              #  print(len(str(stored_otp)))
                 # print(str(stored_otp))
                 if len(str(stored_otp)) == 1:
                     return jsonify({"message":"Login sucess", "TOKEN": get.token(PROVIDED_COOKIE)}), 200
@@ -272,14 +274,14 @@ def return_token():
 def return_all_avilable_users():
     if request.method == 'POST':
         auth = request.get_json()
-        print(auth)
+      #  print(auth)
         TOKEN = auth.get('TOKEN')
         UID = auth.get('UID')
         if TOKEN and UID:
             CURRECT_UID = get.uid_by_token(TOKEN)
             if CURRECT_UID == UID:
                 all_users_arr = get.all_users()
-                print(all_users_arr)
+               # print(all_users_arr)
                 data = {}
                 if all_users_arr:
                     for user in all_users_arr:
@@ -307,9 +309,9 @@ def resend_otp():
             otp = get.stored_otp(UID, COOKIE)
             EMAIL = get.email(COOKIE)
             FIRST_NAME = get.first_name(UID)
-            print(otp)
-            print(EMAIL)
-            print(FIRST_NAME)
+           # print(otp)
+           # print(EMAIL)
+            #print(FIRST_NAME)
             if EMAIL and otp and FIRST_NAME:
                 otp_response = sendOTP(EMAIL, otp, FIRST_NAME,"otpForNewAcc")
                 if otp_response.get("status_code") == 200:
@@ -339,14 +341,14 @@ def get_old_messages():
             ## find all the chats of user
             all_chats_json = get.all_chats_json(UID)
             ## now get the message
-            print()
-            print()
-            print()
-            print()
-            print()
-            print()
-            print()
-            print(all_chats_json.keys())
+            # print()
+            # print()
+            # print()
+            # print()
+            # print()
+            # print()
+            # print()
+            # print(all_chats_json.keys())
             groups_messages = {}
             for guid in all_chats_json.keys():
                 all_messages_dict_type = get.all_messages_json(limit, guid)
@@ -356,7 +358,7 @@ def get_old_messages():
                 else:
                     print(f"err while getting data of group ==>> {guid} and err is {all_messages_dict_type}")
                     return jsonify({"message": "cant able to fetch old messages"}), 400
-            print(groups_messages)
+            #print(groups_messages)
             return jsonify({"message":"sucessfully got messags of all chats","groups_messages":groups_messages}),200
         else:
             return jsonify({"message": "Access Denaid ! auth faild"})
@@ -438,7 +440,7 @@ def handle_user_connect(data):
 @socketio.on("get_all_chat_list")
 def wants_all_his_chats(data):
     #clint sends a json object im storing that json object on data variable
-    print(f"sended data from clint is =>>>>> {data}")
+   # print(f"sended data from clint is =>>>>> {data}")
     PROVIDED_UID = data.get('UID')
     ACCESS_TOKEN = data.get("TOKEN")
     
@@ -449,8 +451,8 @@ def wants_all_his_chats(data):
     UID = get.uid_by_token(ACCESS_TOKEN)
     if UID == PROVIDED_UID:
         all_chats_json = get.all_chats_json(UID)
-        print(all_chats_json)
-        print(type(all_chats_json))
+      #  print(all_chats_json)
+      #  print(type(all_chats_json))
         
         # join the all groups
         # so that in send_messsage event rout can 
@@ -471,17 +473,17 @@ def wants_all_his_chats(data):
 
 @socketio.on('send_message')
 def send_message(data):
-    print(data)
+  #  print(data)
     sender_id = data.get('sender_id')
     message = data.get('message')
     group_id = data.get('group_id')
     
     sender_name = get.first_name(sender_id)
     if sender_id and message:
-        print(sender_id, message)
+       # print(sender_id, message)
         message_id, time_stamp = write_in_database.store_this_message(group_id, sender_id, sender_name, message)
         
-        print(message_id, time_stamp)
+       # print(message_id, time_stamp)
         socketio.emit('new_message', {
             "sender_id": sender_id,
             "sender_name": sender_name,
@@ -497,7 +499,7 @@ def send_message(data):
         
 @socketio.on('send_message_new_chat')
 def send_message_new_chat(data):
-    print("this is new xhat",data)
+   # print("this is new xhat",data)
     sid = request.sid
    
     #print(type(rooms(sid)))
@@ -505,13 +507,13 @@ def send_message_new_chat(data):
     message = data.get('message')
     group_id = data.get('group_id')
     reciever_id = group_id.rsplit('0000000000000000')[1]
-    print(group_id)
-    print(type(group_id))
+  #  print(group_id)
+ #   print(type(group_id))
     
     sender_name = get.first_name(sender_id)
     if group_id not in rooms(sid):
         join_room(group_id)
-        print("runnig first")
+      #  print("runnig first")
         #write in senders chat list
         write_in_database.add_user_in_group(sender_id, group_id, get.first_name(reciever_id) + " " + get.last_name(reciever_id))
         #write in recievers xhat list
@@ -520,7 +522,7 @@ def send_message_new_chat(data):
     # write message and get the message_id and time_stamp
     message_id, time_stamp = write_in_database.store_this_message(group_id, sender_id, sender_name, message)
     if sender_id and message:
-        print(sender_id, message)
+       # print(sender_id, message)
         socketio.emit('new_message', {
             "sender_id": sender_id,
             "message": message,
@@ -573,4 +575,5 @@ def send_message_new_chat(data):
 #         }, room=thread_id)
 
 if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))  
     socketio.run(app, port=5000, host="0.0.0.0", allow_unsafe_werkzeug=True, debug=True)

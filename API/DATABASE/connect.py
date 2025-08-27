@@ -6,7 +6,7 @@ from psycopg2.pool import ThreadedConnectionPool
 database_connection = ThreadedConnectionPool(
         minconn=1,
         maxconn=20,
-        dsn="postgres://hackesofice:npg_0IRsg8YdqaoF@ep-dry-bar-a1zyxhba.ap-southeast-1.pg.koyeb.app/koyebdb"
+        dsn="postgresql://localhost/mydb"
     )
 
 
