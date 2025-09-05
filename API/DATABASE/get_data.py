@@ -1,4 +1,4 @@
-from .connect import database_connection
+from .connect import database
 from .createDatabase import create_database
 from datetime import datetime
 import sys
@@ -7,11 +7,11 @@ class get:
     create_database.create_users_database()
     def all_emails():
         try:
-            connection = database_connection.getconn()
+            connection = database.connect_users_db()
             if connection:
                 cursor = connection.cursor()
                 cursor.execute("""
-                                    SELECT EMAIL FROM users
+                                    SLECT EMAIL FROM users
                                 """)
                 return cursor.fetchall()
         except Exception as e:
@@ -19,17 +19,18 @@ class get:
             return False
         finally:
             if connection:
-                database_connection.putconn(connection)
+                connection.close()
     
     def all_users():
         try:
-            connection = database_connection.getconn()
+            connection = database.connect_users_db()
             if connection:
                 cursor = connection.cursor()
                 cursor.execute("""
-                                SELECT FIRST_NAME, LAST_NAME, UID FROM users
+                                SELECT FIRST_NAME, LAST_NAME FROM users
                                 """)
             all_users_arr = cursor.fetchall()
+            print(all_users_arr)
             cursor.close()
             return all_users_arr
         except Exception as e:
@@ -37,16 +38,16 @@ class get:
             return False
         finally:
             if connection:
-                database_connection.putconn(connection)
+                connection.close()
             
             
     def stored_otp(RAW_UID, COOKIE):
         UID = int(RAW_UID)
         try:
-            connection = database_connection.getconn()
+            connection = database.connect_users_db()
             cursor = connection.cursor()
             cursor.execute("""
-                            SELECT IS_MAIL_OTP FROM users WHERE COOKIE = %s AND UID = %s
+                            SELECT IS_MAIL_OTP FROM users WHERE COOKIE = ? AND UID = ?
                             """, (COOKIE,UID,))
             otp = cursor.fetchone()
             cursor.close()
@@ -57,15 +58,15 @@ class get:
             return False
         finally:
             if connection:
-                database_connection.putconn(connection)
+                connection.close()
     
     def password(EMAIL):
         try:
-            connection = database_connection.getconn()
+            connection = database.connect_users_db()
             if connection:
                 cursor = connection.cursor()
                 cursor.execute("""
-                                SELECT PASSWORD FROM users WHERE EMAIL=%s
+                                SELECT PASSWORD FROM users WHERE EMAIL=?
                                 """,(EMAIL,))
                 password = cursor.fetchone()
                 cursor.close()
@@ -75,15 +76,15 @@ class get:
             return False
         finally:
             if connection:
-                database_connection.putconn(connection)
+                connection.close()
     
     def email(COOKIE):
         try:
-            connection = database_connection.getconn()
+            connection = database.connect_users_db()
             if connection:
                 cursor = connection.cursor()
                 cursor.execute("""
-                                SELECT EMAIL FROM users WHERE COOKIE=%s
+                                SELECT EMAIL FROM users WHERE COOKIE=?
                                 """,(COOKIE,))
                 email = cursor.fetchone()
                 cursor.close()
@@ -93,15 +94,15 @@ class get:
             return False
         finally:
             if connection:
-                database_connection.putconn(connection)
+                connection.close()
     
     def cookie(EMAIL):
         try:
-            connection = database_connection.getconn()
+            connection = database.connect_users_db()
             if connection:
                 cursor = connection.cursor()
                 cursor.execute("""
-                                SELECT COOKIE FROM users WHERE EMAIL=%s
+                                SELECT COOKIE FROM users WHERE EMAIL=?
                                 """,(EMAIL,))
                 cookie = cursor.fetchone()
                 cursor.close()
@@ -111,16 +112,16 @@ class get:
             return False
         finally:
             if connection:
-                database_connection.putconn(connection)
+                connection.close()
     
     def uid_by_email(EMAIL):
         try:
-            connection = database_connection.getconn()
+            connection = database.connect_users_db()
             if connection:
                 cursor = connection.cursor()
                 
                 cursor.execute("""
-                                SELECT UID FROM users WHERE EMAIL=%s
+                                SELECT UID FROM users WHERE EMAIL=?
                                 """, (EMAIL,))
                 
                 uid = cursor.fetchone()
@@ -131,16 +132,16 @@ class get:
             return False
         finally:
             if connection:
-                database_connection.putconn(connection)
+                connection.close()
     
     def uid_by_cookie(COOKIE):
         try:
-            connection = database_connection.getconn()
+            connection = database.connect_users_db()
             if connection:
                 cursor = connection.cursor()
                 
                 cursor.execute("""
-                                SELECT UID FROM users WHERE COOKIE=%s
+                                SELECT UID FROM users WHERE COOKIE=?
                                 """, (COOKIE,))
                 
                 uid = cursor.fetchone()
@@ -151,15 +152,15 @@ class get:
             return False
         finally:
             if connection:
-                database_connection.putconn(connection)
+                connection.close()
     
     def uid_by_token(TOKEN):
         try:
-            connection = database_connection.getconn()
+            connection = database.connect_users_db()
             if connection:
                 cursor = connection.cursor()
                 cursor.execute("""
-                                SELECT UID FROM users WHERE TOKEN = %s
+                                SELECT UID FROM users WHERE TOKEN = ?
                                 """,(TOKEN,))
                 uid = cursor.fetchone()
                 cursor.close()
@@ -171,17 +172,17 @@ class get:
             return False
         finally:
             if connection:
-                database_connection.putconn(connection)
+                connection.close()
             
             
             
     def token(COOKIE):
         try:
-            connection = database_connection.getconn()
+            connection = database.connect_users_db()
             if connection:
                 cursor = connection.cursor()
                 cursor.execute("""
-                                SELECT TOKEN FROM users WHERE COOKIE=%s
+                                SELECT TOKEN FROM users WHERE COOKIE=?
                                 """,(COOKIE,))
                 token = cursor.fetchone()
                 cursor.close()
@@ -191,18 +192,18 @@ class get:
             return False
         finally:
             if connection:
-                database_connection.putconn(connection)
+                connection.close()
     
     def first_name(RAW_UID):
         UID = int(RAW_UID)
         try:
-            connection = database_connection.getconn()
+            connection = database.connect_users_db()
             if connection:
                 cursor = connection.cursor()
                 cursor.execute("""
                                 SELECT FIRST_NAME 
                                 FROM users 
-                                WHERE UID = %s
+                                WHERE UID = ?
                                 """,(UID,))
                 first_name = cursor.fetchone()
                 cursor.close()
@@ -212,28 +213,28 @@ class get:
             return False
         finally:
             if connection:
-                database_connection.putconn(connection)
+                connection.close()
                 
     def last_name(RAW_UID):
         UID = int(RAW_UID)
         try:
-            connection = database_connection.getconn()
+            connection = database.connect_users_db()
             if connection:
                 cursor = connection.cursor()
                 cursor.execute("""
-                                SELECT LAST_NAME FROM users WHERE UID = %s
+                                SELECT LAST_NAME FROM users WHERE UID = ?
                                 """,(UID,))
                 return cursor.fetchone()[0]
         except Exception as e:
             print("err on last_name() ", e)
         finally:
             if connection:
-                database_connection.putconn(connection)
+                connection.close()
                 
     def all_chats_json(RAW_UID):
         UID = int(RAW_UID)
         try:
-            connection = database_connection.getconn()
+            connection = database.connect_chat_lists_db()
             if connection:
                 cursor = connection.cursor()
                 cursor.execute(f"""
@@ -246,7 +247,7 @@ class get:
                 for chat in chats:
                     chats_json[str(chat[0])] = {
                         "NAME": chat[1],
-                        "CREATION_DATE": chat[2].isoformat()
+                        "CREATION_DATE": chat[2]#.isoformat()
                     }
                 cursor.close()
                 return chats_json
@@ -255,11 +256,11 @@ class get:
             return False
         finally:
             if connection:
-                database_connection.putconn(connection)
+                connection.close()
     
     def all_messages_json(limit, guid):
         try:
-            connection = database_connection.getconn()
+            connection = database.connect_messages()
             if connection:
                 cursor = connection.cursor()
                 cursor.execute(f"""
@@ -278,7 +279,7 @@ class get:
                             "sender_id": row_tupple[1],
                             "sender_name": row_tupple[2],
                             "message":row_tupple[3],
-                            "time_stamp": row_tupple[4].isoformat()
+                            "time_stamp": row_tupple[4]#.isoformat()
                         }
                 cursor.close()
                 return messages_of_this_group_in_json_dict
@@ -287,4 +288,4 @@ class get:
             return False
         finally:
             if connection:
-                database_connection.putconn(connection)
+                connection.close()

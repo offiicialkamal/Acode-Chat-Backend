@@ -1,6 +1,6 @@
 import sqlite3
 import os
-from .connect import database_connection
+from .connect import database
 
 class create_database():
     def __init__(self):
@@ -8,12 +8,12 @@ class create_database():
     
     @staticmethod
     def create_users_database():
-        CREDENTIAL_DATABASE_CONNECTED = database_connection.getconn()
+        CREDENTIAL_DATABASE_CONNECTED = database.connect_users_db()
         if CREDENTIAL_DATABASE_CONNECTED:
             try:
                 cursor = CREDENTIAL_DATABASE_CONNECTED.cursor()
                 cursor.execute("""CREATE TABLE IF NOT EXISTS users (
-                    UID BIGSERIAL PRIMARY KEY,
+                    UID INTEGER PRIMARY KEY AUTOINCREMENT,
                     FIRST_NAME TEXT,
                     LAST_NAME TEXT,
                     EMAIL TEXT,
@@ -37,19 +37,19 @@ class create_database():
                 return False
             finally:
                 if CREDENTIAL_DATABASE_CONNECTED:
-                    database_connection.putconn(CREDENTIAL_DATABASE_CONNECTED)
+                    CREDENTIAL_DATABASE_CONNECTED.close()
         else:
             print('unable to communicate with Credentials database')
 
     @staticmethod
     def create_chats_table_for_this_new_user(RAW_UID):
         UID = str(RAW_UID)
-        CHATS_DATABASE_CONNECTED = database_connection.getconn()
+        CHATS_DATABASE_CONNECTED = database.connect_chat_lists_db()
         if CHATS_DATABASE_CONNECTED:
             try:
                 cursor = CHATS_DATABASE_CONNECTED.cursor()
                 cursor.execute(f"""CREATE TABLE IF NOT EXISTS CHATS_{str(UID)} (
-                            GUID BIGSERIAL PRIMARY KEY,
+                            GUID INTEGER PRIMARY KEY AUTOINCREMENT,
                             GNAME TEXT,
                             TIME_STAMP TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                         )""")
@@ -61,22 +61,19 @@ class create_database():
                 return False
             finally:
                 if CHATS_DATABASE_CONNECTED:
-                    database_connection.putconn(CHATS_DATABASE_CONNECTED)
+                    CHATS_DATABASE_CONNECTED.close()
         else:
             print('unable to comunicate with database')
 
     @staticmethod
     def create_chat_database_table(GROUP_ID):
       #  TABLE_NAME = str(GUID)
-        CHAT_DATABASE_CONNECTED = database_connection.getconn()
+        CHAT_DATABASE_CONNECTED = database.connect_messages()
         if CHAT_DATABASE_CONNECTED:
             try:
                 cursor = CHAT_DATABASE_CONNECTED.cursor()
-                # SID => SENDER ID
-                # MID => MESSAGE ID
-                # S_NAME => SENDER NAME
                 cursor.execute(f"""CREATE TABLE IF NOT EXISTS G_{str(GROUP_ID)} (
-                                    MESSAGE_ID BIGSERIAL PRIMARY KEY,
+                                    MESSAGE_ID INTEGER PRIMARY KEY AUTOINCREMENT,
                                     SENDER_ID INTEGER,
                                     SENDER_NAME TEXT,
                                     MESSAGE TEXT,
@@ -90,19 +87,19 @@ class create_database():
                 return False
             finally:
                 if CHAT_DATABASE_CONNECTED:
-                    database_connection.putconn(CHAT_DATABASE_CONNECTED)
+                    CHAT_DATABASE_CONNECTED.close()
         else:
             print(' unable to comunicate with chat tables database')
     
     @staticmethod
     def create_message_list_database():
         try:
-            connection = database_connection.getconn()
+            connection = database.connect_chat_lists_db()
             if  connection:
                 cursor = connection.cursor()
                 cursor.execute("""
                                 CREATE TABLE IF NOT EXISTS all_chats (
-                                    GUID BIGSERIAL PRIMARY KEY,
+                                    GUID INTEGER PRIMARY KEY AUTO_INCREMENT,
                                     GNAME TEXT,
                                     TIME_STAMP TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                                 )
@@ -115,6 +112,6 @@ class create_database():
             return False
         finally:
             if connection:
-                database_connection.putconn(connection)
+                connection.close()
     
         

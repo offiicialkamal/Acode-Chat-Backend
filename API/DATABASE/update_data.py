@@ -1,16 +1,16 @@
-from .connect import database_connection
+from .connect import database
 
 #in future ill add some more metjods like passwod mail number dob changing
 class update:
     def otp(new_otp, UID, COOKIE):
         try:
-            connection = database_connection.getconn()
+            connection = database.connect_users_db()
             if connection:
                 cursor = connection.cursor()
                 cursor.execute("""
                                 UPDATE users 
-                                SET IS_MAIL_OTP = %s
-                                WHERE UID = %s AND COOKIE = %s
+                                SET IS_MAIL_OTP = ?
+                                WHERE UID = ? AND COOKIE = ?
                                 """,(new_otp, UID, COOKIE))
                 connection.commit()
                 cursor.close()
@@ -19,12 +19,12 @@ class update:
             print(f"err while upgrading otp {e}")
         finally:
             if connection:
-                database_connection.putconn(connection)
+                connection.close()
     
     # improve it if iser wants blocking a user or lefting from chat
     def user_groups_list():
         try:
-            connection = database_connection.getconn()
+            connection = database_connection.connection()
             if connection:
                 cursor = connection.cursor()
                 cursor.execute("""
@@ -33,4 +33,5 @@ class update:
         except Exception as e:
             print("error on user_groups_list():", e)
         finally:
-            database_connection.putconn(connection)
+            if connection:
+                connection.close()
