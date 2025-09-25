@@ -2,17 +2,17 @@ from .connect import database
 from .createDatabase import create_database
 from datetime import datetime
 class write_in_database:
-    def add_user(FIRST_NAME, LAST_NAME, EMAIL, IS_MAIL_OTP, DOB, PHONE_NO, IP, CITY,PASSWORD, TOKEN, COOKIE):
+    def add_user(FIRST_NAME, LAST_NAME, EMAIL, IS_MAIL_OTP, DOB, PHONE_NO, IP, CITY,PASSWORD, TOKEN, COOKIE, PROFILE_PIC):
         create_database.create_users_database()
         try:
             connection = database.connect_users_db()
             cursor = connection.cursor()
             if cursor:
                 cursor.execute("""
-                                INSERT INTO users (FIRST_NAME, LAST_NAME, EMAIL, IS_MAIL_OTP, DOB, PHONE_NO, IP, CITY, PASSWORD, TOKEN, COOKIE)
-                                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                INSERT INTO users (FIRST_NAME, LAST_NAME, EMAIL, IS_MAIL_OTP, DOB, PHONE_NO, IP, CITY, PASSWORD, TOKEN, COOKIE, PROFILE_PIC)
+                                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                                 """, 
-                            (FIRST_NAME, LAST_NAME, EMAIL, IS_MAIL_OTP, DOB, PHONE_NO, IP, CITY,PASSWORD, TOKEN, COOKIE)
+                            (FIRST_NAME, LAST_NAME, EMAIL, IS_MAIL_OTP, DOB, PHONE_NO, IP, CITY,PASSWORD, TOKEN, COOKIE, PROFILE_PIC)
                     )
                 connection.commit() # close the connection not cursor
                 
@@ -35,23 +35,28 @@ class write_in_database:
     # ill use it when a user creates a group
     # it will add new group to all chats database
     # and additionally return that new groups uid
-    def add_group(GNAME):
+    def add_group(GNAME, GUID=None):
         #create table if not exists
         create_database.create_message_list_database()
         try:
             # imsert new group 
             connection = database.connect_chat_lists_db()
             cursor = connection.cursor()
-            cursor.execute("""
-                            INSERT INTO all_chats (GNAME)
-                            VALUES(?)
-                            """,(GNAME,))
-            cursor.commit()
-            
+            if not GUID:
+                cursor.execute("""
+                                INSERT INTO all_chats (GNAME)
+                                VALUES(?)
+                                """,(GNAME,))
+            else:
+                cursor.execute("""
+                                INSERT INTO all_chats (GNAME, GUID)
+                                VALUES(?,?)
+                                """,(GNAME,GUID))
+            connection.commit()
             
             #fetch tbw new group GUID
             cursor.execute("""
-                            FROM all_chats SELECT GUID WHERE GNAME= ?
+                        SELECT GUID FROM all_chats WHERE GNAME= ?
                             """,(GNAME,))
             RESULT = cursor.fetchone()
             cursor.close()

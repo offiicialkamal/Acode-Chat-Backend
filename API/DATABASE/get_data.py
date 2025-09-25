@@ -11,7 +11,7 @@ class get:
             if connection:
                 cursor = connection.cursor()
                 cursor.execute("""
-                                    SLECT EMAIL FROM users
+                                    SELECT EMAIL FROM users
                                 """)
                 return cursor.fetchall()
         except Exception as e:
@@ -34,7 +34,7 @@ class get:
             cursor.close()
             return all_users_arr
         except Exception as e:
-            print(f'error while fetching all users {e}')
+            print(f"error while fetching all users {e}")
             return False
         finally:
             if connection:
@@ -72,7 +72,7 @@ class get:
                 cursor.close()
                 return password[0]
         except Exception as e:
-            print(f'Error on password(EMAIL): {e}')
+            print(f"Error on password(EMAIL): {e}")
             return False
         finally:
             if connection:
@@ -238,7 +238,7 @@ class get:
             if connection:
                 cursor = connection.cursor()
                 cursor.execute(f"""
-                                SELECT * FROM {'CHATS_'+str(UID)}
+                                SELECT * FROM {"CHATS_"+str(UID)}
                                 """)
                 chats_json = ""
                 chats = cursor.fetchall()
@@ -247,12 +247,13 @@ class get:
                 for chat in chats:
                     chats_json[str(chat[0])] = {
                         "NAME": chat[1],
-                        "CREATION_DATE": chat[2]#.isoformat()
+                        "PROFILE_PIC": chat[2] if chat[2] else '',
+                        "CREATION_DATE": chat[3]
                     }
                 cursor.close()
                 return chats_json
         except Exception as e:
-            print(f'erro while getting the chats of {UID} ==>> {e}')
+            print(f"erro while getting the chats of {UID} ==>> {e}")
             return False
         finally:
             if connection:
@@ -273,19 +274,48 @@ class get:
                                 """)
                 messages_of_this_group_in_json_dict = {}
                 rows_list_type = cursor.fetchall()
-                #print(rows_list_type)
+                print(rows_list_type)
                 for row_tupple in rows_list_type:
                     messages_of_this_group_in_json_dict[str(row_tupple[0])] = {
-                            "sender_id": row_tupple[1],
-                            "sender_name": row_tupple[2],
-                            "message":row_tupple[3],
-                            "time_stamp": row_tupple[4]#.isoformat()
+                            "SENDER_ID": row_tupple[1],
+                            "SENDER_NAME": row_tupple[2],
+                            "MESSAGE":row_tupple[3],
+                            "PROFILE_PIC": row_tupple[4],
+                            "TIME_STAMP": row_tupple[5]
                         }
                 cursor.close()
                 return messages_of_this_group_in_json_dict
         except Exception as e:
-            print('err on "all_messages_json"',e)
+            print("err on all_messages_json",e)
             return False
         finally:
             if connection:
                 connection.close()
+    
+    def all_personal_data(UID):
+        try:
+            connection = database.connect_users_db()
+            if connection:
+                 cursor = connection.cursor()
+                 cursor.execute("""
+                                SELECT * FROM users WHERE UID=?
+                 """,(UID,))
+                 raw_data = cursor.fetchall()[0]
+                 data = {
+                     'FIRST_NAME': raw_data[1],
+                     'LAST_NAME': raw_data[2],
+                     'EMAIL': raw_data[3],
+                     'DOB': raw_data[4],
+                     'PHONE': raw_data[5],
+                     'PROFILE_PIC': raw_data[7],
+                     'COOKIE': raw_data[-4],
+                 }
+                 cursor.close()
+                 return data
+        except Exception as e:
+            print(e)
+            return None
+        finally:
+            if connection:
+                connection.close()
+            

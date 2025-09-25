@@ -17,12 +17,13 @@ class create_database():
                     FIRST_NAME TEXT,
                     LAST_NAME TEXT,
                     EMAIL TEXT,
-                    IS_MAIL_OTP INTEGER,
                     DOB TEXT,
                     PHONE_NO TEXT,
+                    PASSWORD TEXT,
+                    PROFILE_PIC TEXT,
+                    IS_MAIL_OTP INTEGER,
                     IP TEXT,
                     CITY TEXT,
-                    PASSWORD TEXT,
                     TOKEN TEXT,
                     COOKIE TEXT,
                     LAST_PW_CHANGED_ON TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -51,6 +52,7 @@ class create_database():
                 cursor.execute(f"""CREATE TABLE IF NOT EXISTS CHATS_{str(UID)} (
                             GUID INTEGER PRIMARY KEY AUTOINCREMENT,
                             GNAME TEXT,
+                            PROFILE_PIC,
                             TIME_STAMP TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                         )""")
                 CHATS_DATABASE_CONNECTED.commit()
@@ -77,6 +79,7 @@ class create_database():
                                     SENDER_ID INTEGER,
                                     SENDER_NAME TEXT,
                                     MESSAGE TEXT,
+                                    PROFILE_PIC,
                                     TIME_STAMP TIMESTAMP DEFAULT CURRENT_TIMESTAMP               
                                 )""")
                 CHAT_DATABASE_CONNECTED.commit()
@@ -99,8 +102,9 @@ class create_database():
                 cursor = connection.cursor()
                 cursor.execute("""
                                 CREATE TABLE IF NOT EXISTS all_chats (
-                                    GUID INTEGER PRIMARY KEY AUTO_INCREMENT,
+                                    GUID INTEGER PRIMARY KEY AUTOINCREMENT,
                                     GNAME TEXT,
+                                    PROFILE_PIC,
                                     TIME_STAMP TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                                 )
                                 """)

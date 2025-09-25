@@ -21,17 +21,50 @@ class update:
             if connection:
                 connection.close()
     
-    # improve it if iser wants blocking a user or lefting from chat
-    def user_groups_list():
+    def personal_data(data):
+        connection = None
         try:
-            connection = database_connection.connection()
+            connection = database.connect_users_db()
             if connection:
                 cursor = connection.cursor()
                 cursor.execute("""
-                                INSERT INTO 
-                                """)
+                        UPDATE users
+                        SET FIRST_NAME = ?,
+                            LAST_NAME = ?,
+                            EMAIL = ?,
+                            PHONE = ?,
+                            DOB = ?
+                        WHERE UID = ? AND COOKIE = ?
+                """,(data['first_name'], data['last_name'], data['email'], data['phone'], data['dob'], data['uid'], data['cookie']))
+                return True
         except Exception as e:
-            print("error on user_groups_list():", e)
+            print(e)
+            return False
         finally:
             if connection:
                 connection.close()
+            
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    # improve it if iser wants blocking a user or lefting from chat
+    # def user_groups_list():
+    #     try:
+    #         connection = database.connection()
+    #         if connection:
+    #             cursor = connection.cursor()
+    #             cursor.execute("""
+    #                             INSERT INTO 
+    #                             """)
+    #     except Exception as e:
+    #         print("error on user_groups_list():", e)
+    #     finally:
+    #         if connection:
+    #             connection.close()
