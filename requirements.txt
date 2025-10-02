@@ -7,3 +7,6 @@ pg8000
 psycopg2-binary
 waitress
 asgiref
+fastapi
+uvicorn
+starlette
