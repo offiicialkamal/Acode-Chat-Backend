@@ -32,10 +32,13 @@ class update:
                         SET FIRST_NAME = ?,
                             LAST_NAME = ?,
                             EMAIL = ?,
-                            PHONE = ?,
-                            DOB = ?
+                            PHONE_NO = ?,
+                            DOB = ?,
+                            PROFILE_PIC = ?
                         WHERE UID = ? AND COOKIE = ?
-                """,(data['first_name'], data['last_name'], data['email'], data['phone'], data['dob'], data['uid'], data['cookie']))
+                """,(data['FIRST_NAME'], data['LAST_NAME'], data['EMAIL'], data['PHONE'], data['DOB'], data['PROFILE_PIC'], data['UID'], data['COOKIE']))
+                connection.commit()
+                cursor.close()
                 return True
         except Exception as e:
             print(e)

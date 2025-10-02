@@ -27,10 +27,10 @@ class get:
             if connection:
                 cursor = connection.cursor()
                 cursor.execute("""
-                                SELECT FIRST_NAME, LAST_NAME FROM users
+                                SELECT FIRST_NAME, LAST_NAME, UID FROM users
                                 """)
             all_users_arr = cursor.fetchall()
-            print(all_users_arr)
+            print(all_users_arr, type(all_users_arr))
             cursor.close()
             return all_users_arr
         except Exception as e:
@@ -300,7 +300,11 @@ class get:
                  cursor.execute("""
                                 SELECT * FROM users WHERE UID=?
                  """,(UID,))
-                 raw_data = cursor.fetchall()[0]
+                 
+                 fc = cursor.fetchall()
+                 print('its fc data', fc)
+                 raw_data = fc[0]
+                 print('its raw data',raw_data)
                  data = {
                      'FIRST_NAME': raw_data[1],
                      'LAST_NAME': raw_data[2],

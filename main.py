@@ -1,11 +1,14 @@
 from flask import Flask, request, jsonify, render_template
 from flask_sock import Sock
+from asgiref.wsgi import WsgiToAsgi
+from waitress import serve
 ##from flask_socketio import SocketIO, emit, join_room, rooms
 from flask_cors import CORS
 # from API.GENERAL.new_id import generate_id
 from API.GENERAL.cookie import create_cookie
 from API.GENERAL.token import create_token
 from API.GENERAL.otp import generate_otp
+from API.GENERAL.data_validators import validator
 from API.GENERAL.send_verification_email import sendOTP
 #from API.DATABASE.createDatabase import create_database
 #from API.DATABASE.database_actions import database
@@ -16,6 +19,7 @@ from GLOBAL_DATABASE_API.data_pusher import clone_replace_push_data
 import sqlite3, random, string, time,os
 import requests
 import json
+import uvicorn
 
 # application logs show or not
 is_developement = True
@@ -316,28 +320,32 @@ def return_token():
 @app.route("/get_all_users", methods=["POST"])
 def return_all_avilable_users():
     if request.method == "POST":
-        auth = request.get_json()
-        # print(auth)
-        TOKEN = auth.get("TOKEN")
-        UID = auth.get("UID")
-        if TOKEN and UID:
-            CURRECT_UID = get.uid_by_token(TOKEN)
-            if CURRECT_UID == UID:
-                all_users_arr = get.all_users()
-               # print(all_users_arr)
-                data = {}
-                if all_users_arr:
-                    for user in all_users_arr:
-                        data[user[2]]= {
-                            "NAME": " ".join([user[0], user[1]])
-                        }
-                    return data
+        try:
+            auth = request.get_json()
+            # print(auth)
+            TOKEN = auth.get("TOKEN")
+            UID = auth.get("UID")
+            if TOKEN and UID:
+                CURRECT_UID = get.uid_by_token(TOKEN)
+                if CURRECT_UID == UID:
+                    all_users_arr = get.all_users()
+                   # print(all_users_arr, type(all_users_arr))
+                    data = {}
+                    if all_users_arr:
+                        for user in all_users_arr:
+                            data[user[2]]= {
+                                "NAME": " ".join([user[0], user[1]])
+                            }
+                        return data
+                    else:
+                        return jsonify({"message":"unable fo fetch users"}),404
                 else:
-                    return jsonify({"message":"unable fo fetch users"}),404
+                    return jsonify({"message": "Access Denid ! authentication faild"}),401
             else:
-                return jsonify({"message": "Access Denid ! authentication faild"}),401
-        else:
-            return jsonify({"message":" Accss Denaid ! login needed"}),401
+                return jsonify({"message":" Accss Denaid ! login needed"}),401
+        except Exception as e:
+            print('something went wrong', e)
+            return jsonify({"message":"something went wrong"}),401
     else:
         return jsonify({"message":"method mot allowed"}),405
 
@@ -363,7 +371,7 @@ def resend_otp():
             # print(otp)
             # print(EMAIL)
             # print(FIRST_NAME)
-            if EMAIL and otp and FIRST_NAME:
+            if (EMAIL and otp and FIRST_NAME) or (EMAIL):
                 otp_response = sendOTP(EMAIL, otp, FIRST_NAME,"otpForNewAcc")
                 if otp_response.get("status_code") == 200:
                     return jsonify({"message": "OTP sent sucessfully"}),200
@@ -427,28 +435,63 @@ def get_settings_data():
                 if data.get('COOKIE') == users_stored_data.get('COOKIE'):
                     print('user verified ') if is_developement else None
                     return jsonify({"message": "Sucessfully got all details", 'credentials': users_stored_data}), 200
+                else:
+                    return ({'message': 'Authentication Faild weiredly'}), 400
+            else:
+                return jsonify({'message': 'Cant able find you account data'}), 400
+        else:
+            return jsonify({'message': 'some details are missing'}), 401
         return jsonify({'message': "Access Denaid !!"}), 409
+        
+        
     elif request.method == 'PATCH':
         data = request.get_json()
         print(data)
         if data:
             users_stored_data = get.all_personal_data(data.get('UID'))
-            if users_stored_data and users_stored_data.get('EMAIL') == data.get('EMAIL'):
-                if users_stored_data.get('PASSWORD') == data.get('PASSWORD'):
-                    return jsonify({'message':'sucessfully updated data'}), 200
-            else:
-                # is program control is hear then user has changed email
-                # so verify new email only after that do
-                if data.get('UID') in email_change_otps_dict:
-                    if data.get('EMAIL') not in get.all_emails():
-                        if email_change_otps_dict.get(data.get('UID')) == data.get('OTP'):
-                            return jsonify({'message':'sucessfully updated data'}), 200
-                        else:
-                            return jsonify({"message": " Can't change email !! incurrect OTP"})
+            if users_stored_data:
+                if users_stored_data.get('EMAIL') == data.get('EMAIL'):
+                    if users_stored_data.get('PASSWORD') == data.get('PASSWORD'):
+                        # details verification
+                        update.personal_data(data)
+                        return jsonify({'message':'sucessfully updated data'}), 200
+                        
+                        
+                        ##### ill implement thse validations soon
+                        FIRST_NAME_VALIDATION = validator.validate_first_name(data.get('FIRST_NAME'))
+                        LAST_NAME_VALIDATION = validator.validate_last_name(data.get('LAST_NAME'))
+                        EMAIL_VALIDATION = validator.validate_email(data.get('EMAIl'))
+                        PHONE_NO_VALIDATION = validator.validate.phone_no(data.get('PHONE_NO'))
+                        DOB_VALIDATION = validator.validate_dob(data.get('DOB'))
+                        PROFILE_PIC_VALIDATION = validator.validate_profile_pic_url(data.get('PROFILE_PIC'))
+                        try:
+                            if  FIRST_NAME_VALIDATION and LAST_NAME_VALIDATION and EMAIL_VALIDATION and PHONE_NO_VALIDATION and DOB_VALIDATION and PROFILE_PIC_VALIDATION:
+                                update.personal_data(data)
+                                return jsonify({'message':'sucessfully updated data'}), 200
+                        except Exception as e:
+                                return jsonify({'message': e, }), 401
                     else:
-                        # means the email is associated with another account
-                        return jsonify({'message':'Provided Email already Associated with another account'}), 409
-        return jsonify({"message": " Something went wrong please try after some time or report to us"}), 409
+                        return jsonify({'message': 'Wrong Password please Retry With currect one'}), 401
+                else:
+                    # is program control is hear then user has changed email
+                    # so verify new email only after that do
+                    if data.get('UID') in email_change_otps_dict:
+                        if data.get('EMAIL') not in get.all_emails():
+                            if email_change_otps_dict.get(data.get('UID')) == data.get('OTP'):
+                                
+                                ## ill add updatee data part also 
+                                
+                                return jsonify({'message':'sucessfully updated data'}), 200
+                            else:
+                                return jsonify({"message": " Can't change email !! incurrect OTP"})
+                        else:
+                            return jsonify({'message':'Provided Email already Associated with another account'}), 409
+                    else:
+                        return jsonify({'message': 'feels like you have not sended otp till yet please click on send otp button and enter the sended OTP to verify your new Email'}), 403
+            else:
+               return jsonify({"message":"unable to reach your data please make sure you're not modified source"}), 403
+        else:
+            return jsonify({"message": " Missing request data "}), 409
     else:
         return jsonify({'message': 'Method not supported'}), 501
 
@@ -546,11 +589,12 @@ def send_message(data, ws):
     sender_id = data.get("SENDER_ID")
     message = data.get("MESSAGE")
     group_id = data.get("GROUP_ID")
+    profile_pic = data.get("PROFILE_PIC")
     
     sender_name = get.first_name(sender_id)
     if sender_id and message:
         # print(sender_id, message)
-        message_id, time_stamp = write_in_database.store_this_message(group_id, sender_id, sender_name, message)
+        message_id, time_stamp, profile_pic = write_in_database.store_this_message(group_id, sender_id, sender_name, message, profile_pic)
         
         # print(message_id, time_stamp)
         # socketio.emit("new_message", {
@@ -568,7 +612,8 @@ def send_message(data, ws):
             "MESSAGE": message,
             "GROUP_ID": group_id,
             "MESSAGE_ID": message_id,
-            "TIME_STAMP": time_stamp
+            "TIME_STAMP": time_stamp,
+            "PROFILE_PIC": profile_pic
         }
         
         return {"message": "message sent sucessfully", "content": message_data,"status_code":200}
@@ -673,12 +718,12 @@ def websocket_handler(ws):
     finally:
         conncted_clients.remove(ws)
 
-
-
-
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  
-    app.run(port=port, host="0.0.0.0", debug=True)
+# if __name__ == "__main__":
+#     port = int(os.environ.get("PORT", 5000))  
+#     uvicorn(app, host="0.0.0.0", port=5000)
+#   ## app.run(port=port, host="0.0.0.0", debug=True)
    ## socketio.run(app, port=5000, host="0.0.0.0", allow_unsafe_werkzeug=True, debug=True)
    ## socketio.run(app, port=5000, host="0.0.0.0", allow_unsafe_werkzeug=True, debug=True)
+
+# convert to asgi
+asgi_app = WsgiToAsgi(app)

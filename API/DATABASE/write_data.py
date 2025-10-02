@@ -100,27 +100,27 @@ class write_in_database:
     # it will store messages
     # each group id represents that specific table
     # this table contains all messages 
-    def store_this_message(GROUP_ID, SENDER_ID, SENDER_NAME, MESSAGE):
+    def store_this_message(GROUP_ID, SENDER_ID, SENDER_NAME, MESSAGE, PROFILE_PIC):
         create_database.create_chat_database_table(GROUP_ID)
         connection = None
         try:
             connection = database.connect_messages()
             cursor = connection.cursor()
             cursor.execute(f"""
-                    INSERT INTO G_{GROUP_ID} (SENDER_ID, SENDER_NAME, MESSAGE)
-                    VALUES(?, ?, ?)
-            """, (int(SENDER_ID), SENDER_NAME, MESSAGE))
+                    INSERT INTO G_{GROUP_ID} (SENDER_ID, SENDER_NAME, MESSAGE, PROFILE_PIC)
+                    VALUES(?, ?, ?, ?)
+            """, (int(SENDER_ID), SENDER_NAME, MESSAGE, PROFILE_PIC))
             connection.commit()
             MESSAGE_ID = cursor.lastrowid
             print(MESSAGE_ID)
             cursor.execute(f"""
-                            SELECT TIME_STAMP FROM G_{str(GROUP_ID)} WHERE MESSAGE_ID = ?
+                            SELECT TIME_STAMP, PROFILE_PIC FROM G_{str(GROUP_ID)} WHERE MESSAGE_ID = ?
                             """,(MESSAGE_ID,))
             
             result = cursor.fetchone()
             print(result)
             cursor.close()
-            return MESSAGE_ID, result[0]#.isoformat()
+            return MESSAGE_ID, result[0], result [1] #.isoformat()
         except Exception as e:
             print("error on store_this_message(GROUP_ID, SENDER_ID, SENDER_NAME, MESSAGE):", e)
             return False, False
