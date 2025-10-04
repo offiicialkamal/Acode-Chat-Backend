@@ -37,8 +37,8 @@ templates = Jinja2Templates(directory='templates')
 # application logs show or not
 is_developement = True
 connected_clients = set()
- #all comnected ckients
-rooms = dict() # store all rooms
+#all comnected ckients
+rooms = dict()  # store all rooms
 
 email_change_otps_dict = dict()
 #esxample strructure
@@ -65,7 +65,7 @@ email_change_otps_dict = dict()
 ############################################################################
 ############################################################################
 # originalDatabase = {
-  
+
 #                 "sender uid ": "56354635",
 #                 "message": "hello from user 2"
 #             }
@@ -114,29 +114,20 @@ email_change_otps_dict = dict()
 # }
 
 
-
-
-
-
-
 class socketio:
-    def emit(self, event, raw_json_data, ws,/,*,room=None):
+
+    def emit(self, event, raw_json_data, ws, /, *, room=None):
         ## handle the event
         data = json.dumps(raw_json_data)
         if room & data.get('id') == ws:
-            ws.send({
-                "event": event,
-                "data": data
-            })
-            
+            ws.send({"event": event, "data": data})
+
     @staticmethod
     def join_room(room_id: str, user_id: str, socket_id: str):
         global rooms
         rooms.setdefault(str(room_id), {})[str(user_id)] = str(socket_id)
         return True
-    
-            
-        
+
 
 @app.get("/")
 def home(request: Request):
@@ -146,25 +137,33 @@ def home(request: Request):
     # requests.get("https://parental-kelci-nothinghjn-df173882.koyeb.app/quick_quick_save_data_to_database_repository")
     # clone_replace_push_data(commit_databases=False)
     return "API is Alive"
-  
+
+
 @app.get("/uptime")
 def uptime():
     return HTMLResponse('</h1> im live boss </h1>')
+
 
 @app.get("/quick_quick_save_data_to_database_repository")
 def data_saver_main():
     clone_replace_push_data()
     return "done cloned and pushed successfully"
 
+
 @app.get('/sign_up')
 def signup_get():
-    return templates.TemplateResponse('sign_up.html', {'request': request, 'title': 'sign-up'})
+    return templates.TemplateResponse('sign_up.html', {
+        'request': request,
+        'title': 'sign-up'
+    })
 
 
 @app.get('get_profile_pic_link/{uid}')
 def return_the_profile_link(request: Request, uid: int):
-    return JSONResponse(content={'PROFILE_PIC': get.profile_pic(uid)},status_code=200)
-    
+    return JSONResponse(content={'PROFILE_PIC': get.profile_pic(uid)},
+                        status_code=200)
+
+
 @app.post("/sign_up")
 async def signup(request: Request):
     print(request)
@@ -172,7 +171,7 @@ async def signup(request: Request):
     DEFAULT_CHAT_UID = None
     DEFAULT_CHAT_NAME = None
     NEW_USERS_UID = None
-    EMAIL= None
+    EMAIL = None
     data = None
     FIRST_NAME = None
     LAST_NAME = None
@@ -192,17 +191,21 @@ async def signup(request: Request):
         DEFAULT_CHAT_NAME = "ACODE CHAT"
         EMAIL = data.get("EMAIL")
         all_emails = get.all_emails()
-        write_in_database.add_group(DEFAULT_CHAT_NAME, DEFAULT_CHAT_UID) ## one or only for the first time when we have a new database pr blank database 
+        write_in_database.add_group(
+            DEFAULT_CHAT_NAME, DEFAULT_CHAT_UID
+        )  ## one or only for the first time when we have a new database pr blank database
         print(all_emails)
-       # print(request.remote_addr)
-        if not all_emails or (f"{EMAIL}",) not in all_emails:
+        # print(request.remote_addr)
+        if not all_emails or (f"{EMAIL}", ) not in all_emails:
             FIRST_NAME = data.get("FIRST_NAME")
             LAST_NAME = data.get("LAST_NAME")
             DOB = data.get("DOB")
             if data.get("PHONE_NO").isdigit():
                 PHONE_NO = int(data.get("PHONE_NO"))
             else:
-                return JSONResponse(content={"message": "Invalid PHONE_NO providede"}, status_code=403)
+                return JSONResponse(
+                    content={"message": "Invalid PHONE_NO providede"},
+                    status_code=403)
             PASSWORD = data.get("PASSWORD")
             IP = data["IP_INFO"].get("ip")
             CITY = data["IP_INFO"].get("city")
@@ -210,27 +213,50 @@ async def signup(request: Request):
             TOKEN = create_token()
             COOKIE = create_cookie()
             if not (FIRST_NAME or LAST_NAME or DOB):
-                return JSONResponse(content={"message": "missing Details"}, status_code=400)
+                return JSONResponse(content={"message": "missing Details"},
+                                    status_code=400)
             for ch in FIRST_NAME + LAST_NAME:
-                if not ((ch<="z" and ch>="a") or (ch<="Z" and ch>="A")):
-                    return JSONResponse(content={"message": "Only alphabets allowed in names"}, status_code=400)
-            
+                if not ((ch <= "z" and ch >= "a") or
+                        (ch <= "Z" and ch >= "A")):
+                    return JSONResponse(
+                        content={"message": "Only alphabets allowed in names"},
+                        status_code=400)
+
             # retun sucess message along with cookie token and uid
             # ill add verification machenism
-            otp_response = sendOTP(EMAIL,IS_MAIL_OTP, FIRST_NAME,"otpForNewAcc")
+            otp_response = sendOTP(EMAIL, IS_MAIL_OTP, FIRST_NAME,
+                                   "otpForNewAcc")
             print(otp_response)
             if otp_response.get("status_code") == 200:
-                NEW_USERS_UID = write_in_database.add_user(FIRST_NAME, LAST_NAME, EMAIL, IS_MAIL_OTP, DOB, PHONE_NO, IP, CITY,PASSWORD, TOKEN, COOKIE, PROFILE_PIC)
-                write_in_database.add_user_in_group(NEW_USERS_UID, DEFAULT_CHAT_UID, DEFAULT_CHAT_NAME)
-                cont, status = {"message": "Details Got sucessfully, verification pendding !", "COOKIE":COOKIE, "UID":NEW_USERS_UID, "TOKEN":TOKEN},200
+                NEW_USERS_UID = write_in_database.add_user(
+                    FIRST_NAME, LAST_NAME, EMAIL, IS_MAIL_OTP, DOB, PHONE_NO,
+                    IP, CITY, PASSWORD, TOKEN, COOKIE, PROFILE_PIC)
+                write_in_database.add_user_in_group(NEW_USERS_UID,
+                                                    DEFAULT_CHAT_UID,
+                                                    DEFAULT_CHAT_NAME)
+                cont, status = {
+                    "message":
+                    "Details Got sucessfully, verification pendding !",
+                    "COOKIE": COOKIE,
+                    "UID": NEW_USERS_UID,
+                    "TOKEN": TOKEN
+                }, 200
             elif otp_response.get("status_code") == 429:
-                cont, status = {"message": "Faild ! Too much requets wait amd retry after 20 minitus"},429
+                cont, status = {
+                    "message":
+                    "Faild ! Too much requets wait amd retry after 20 minitus"
+                }, 429
             elif otp_response.get("status_code") == 400:
-                cont, status = {"message":"Plase check Email"},400
+                cont, status = {"message": "Plase check Email"}, 400
             else:
-                cont, status = {"message": "faild to send otp", "otp_status": otp_response}, otp_response.get("status_code")
+                cont, status = {
+                    "message": "faild to send otp",
+                    "otp_status": otp_response
+                }, otp_response.get("status_code")
         else:
-            cont, status = {"message": "Email already Associated with another Account"}, 409
+            cont, status = {
+                "message": "Email already Associated with another Account"
+            }, 409
         return JSONResponse(content=cont, status_code=status)
 
 
@@ -245,17 +271,24 @@ async def verify_otp(request: Request):
     if UID and COOKIE:
         if enterd_otp == str(get.stored_otp(UID, COOKIE)):
             update.otp(0, UID, COOKIE)
-            cont, status = {"message":"Email verified sucessfully", "TOKEN": get.token(COOKIE)},200
+            cont, status = {
+                "message": "Email verified sucessfully",
+                "TOKEN": get.token(COOKIE)
+            }, 200
         else:
             cont, status = {"message": "Access Denaid ! Invalid otp"}, 401
     else:
         cont, status = {"message": "missing cookie or uid"}, 403
     return JSONResponse(content=cont, status_code=status)
 
+
 @app.get('/login')
 def login_get(request: Request):
-    return templates.TemplateResponse('login.html', {'request': request, 'title': 'login page'})
-    
+    return templates.TemplateResponse('login.html', {
+        'request': request,
+        'title': 'login page'
+    })
+
 
 # if ussr logs in with mail password
 @app.post("/login")
@@ -277,28 +310,44 @@ async def login(request: Request):
         if PROVIDED_EMAIL and PROVIDED_PASS:
             all_emails = get.all_emails()
             if all_emails:
-                if (f"{PROVIDED_EMAIL}",) in all_emails:
+                if (f"{PROVIDED_EMAIL}", ) in all_emails:
                     STORED_PASSWORD = get.password(PROVIDED_EMAIL)
                     if PROVIDED_PASS == STORED_PASSWORD:
                         COOKIE = get.cookie(PROVIDED_EMAIL)
                         UID = get.uid_by_email(PROVIDED_EMAIL)
                         otp = get.stored_otp(UID, COOKIE)
                         if len(str(otp)) == 1:
-                            cont, status = {"message": "logged in sucessfully", "COOKIE": COOKIE, "UID": UID, "TOKEN": get.token(COOKIE)}, 200
+                            cont, status = {
+                                "message": "logged in sucessfully",
+                                "COOKIE": COOKIE,
+                                "UID": UID,
+                                "TOKEN": get.token(COOKIE)
+                            }, 200
                         else:
-                            sendOTP(PROVIDED_EMAIL, otp, get.first_name(UID),"otpForNewAcc")
-                            cont, status = {"message": "Access Denaid ! Verification pending", "redirect": True},401
+                            sendOTP(PROVIDED_EMAIL, otp, get.first_name(UID),
+                                    "otpForNewAcc")
+                            cont, status = {
+                                "message":
+                                "Access Denaid ! Verification pending",
+                                "COOKIE": COOKIE,
+                                "UID": UID,
+                                "redirect": True
+                            }, 401
                     else:
-                        cont, status = {"message": "invalid password"},401
+                        cont, status = {"message": "invalid password"}, 401
                 else:
-                    cont, status = {"message": "No account associated with provided account"}, 401
+                    cont, status = {
+                        "message":
+                        "No account associated with provided account"
+                    }, 401
             else:
-                cont, status = {"message":"Internal Server Err ;"}, 500
+                cont, status = {"message": "Internal Server Err ;"}, 500
         else:
-            cont, status = {"message":"Access Denaid ! Email or password missing"}, 401
+            cont, status = {
+                "message": "Access Denaid ! Email or password missing"
+            }, 401
 
         return JSONResponse(content=cont, status_code=status)
-
 
 
 ## if user logs in with cookie
@@ -312,22 +361,31 @@ async def return_token(request: Request):
         cont, status = None, None
         if PROVIDED_COOKIE and PROVIDED_UID:
             ORIGINAL_UID = get.uid_by_cookie(PROVIDED_COOKIE)
-            
-            print(type(ORIGINAL_UID), ORIGINAL_UID is not None and ORIGINAL_UID == PROVIDED_UID, type(ORIGINAL_UID is not None and ORIGINAL_UID == PROVIDED_UID))
+
+            print(
+                type(ORIGINAL_UID), ORIGINAL_UID is not None
+                and ORIGINAL_UID == PROVIDED_UID,
+                type(ORIGINAL_UID is not None
+                     and ORIGINAL_UID == PROVIDED_UID))
             if ORIGINAL_UID is not None and ORIGINAL_UID == PROVIDED_UID:
                 stored_otp = get.stored_otp(ORIGINAL_UID, PROVIDED_COOKIE)
-              #  print(len(str(stored_otp)))
+                #  print(len(str(stored_otp)))
                 # print(str(stored_otp))
                 if len(str(stored_otp)) == 1:
                     print('login sucess')
-                    cont, status = {"message":"Login sucess", "TOKEN": get.token(PROVIDED_COOKIE)}, 200
+                    cont, status = {
+                        "message": "Login sucess",
+                        "TOKEN": get.token(PROVIDED_COOKIE)
+                    }, 200
                 else:
                     #sendOTP(get.email(PROVIDED_COOKIE),str(stored_otp), get.first_name(ORIGINAL_UID),"otpForNewAcc")
                     cont, status = {"message": "Verification pending"}, 409
             else:
-                cont, status= {"message": "Access Denaid ! Login needed"}, 400
+                cont, status = {"message": "Access Denaid ! Login needed"}, 400
         else:
-            cont, status = {"mesaage":"Access Denaid ! missing cookie or uid"}, 403
+            cont, status = {
+                "mesaage": "Access Denaid ! missing cookie or uid"
+            }, 403
         return JSONResponse(content=cont, status_code=status)
 
 
@@ -344,26 +402,31 @@ async def return_all_avilable_users(request: Request):
                 CURRECT_UID = get.uid_by_token(TOKEN)
                 if CURRECT_UID == UID:
                     all_users_arr = get.all_users()
-                   # print(all_users_arr, type(all_users_arr))
+                    # print(all_users_arr, type(all_users_arr))
                     data = {}
                     if all_users_arr:
                         for user in all_users_arr:
-                            data[user[2]]= {
+                            data[user[2]] = {
                                 "NAME": " ".join([user[0], user[1]])
                             }
                         cont, status = data, 200
                     else:
-                        cont, status = {"message":"unable fo fetch users"},404
+                        cont, status = {
+                            "message": "unable fo fetch users"
+                        }, 404
                 else:
-                    cont, status = {"message": "Access Denid ! authentication faild"},401
+                    cont, status = {
+                        "message": "Access Denid ! authentication faild"
+                    }, 401
             else:
-                cont, status = {"message":" Accss Denaid ! login needed"},401
+                cont, status = {"message": " Accss Denaid ! login needed"}, 401
         except Exception as e:
             print('something went wrong', e)
-            cont, status = {"message":"something went wrong"},401
+            cont, status = {"message": "something went wrong"}, 401
 
         return JSONResponse(content=cont, status_code=status)
-        
+
+
 @app.post("/resend_otp")
 async def resend_otp(request: Request):
     if True:
@@ -378,28 +441,39 @@ async def resend_otp(request: Request):
                 otp = generate_otp()
                 email_change_otps_dict[UID] = otp
                 EMAIL = data.get('EMAIL')
+                st = get.is_email_exists(EMAIL)
+                if st:
+                    return JSONResponse(content={'MESSAGE': st},
+                                        status_code=409)
             else:
-                otp = get.stored_otp(UID, COOKIE) 
+                otp = get.stored_otp(UID, COOKIE)
                 EMAIL = get.email(COOKIE)
 
             FIRST_NAME = get.first_name(UID)
 
             if (EMAIL and otp and FIRST_NAME) or (EMAIL):
-                otp_response = sendOTP(EMAIL, otp, FIRST_NAME,"otpForNewAcc")
+                otp_response = sendOTP(EMAIL, otp, FIRST_NAME, "otpForNewAcc")
                 if otp_response.get("status_code") == 200:
-                    cont, status = {"message": "OTP sent sucessfully"},200
+                    cont, status = {"message": "OTP sent sucessfully"}, 200
                 elif otp_response.get("status_code") == 429:
-                    cont, status = {"mcont, status =": "Faild ! Too much requets wait amd retry after 20 minitus"},429
+                    cont, status = {
+                        "mcont, status =":
+                        "Faild ! Too much requets wait amd retry after 20 minitus"
+                    }, 429
                 elif otp_response.get("status_code") == 400:
-                    cont, status = {"message":"Plase check Email"},400
+                    cont, status = {"message": "Plase check Email"}, 400
                 else:
-                    cont, status = {"message":"Something went wrong", "otp_status": otp_response}, otp_response.get("status_code")
+                    cont, status = {
+                        "message": "Something went wrong",
+                        "otp_status": otp_response
+                    }, otp_response.get("status_code")
             else:
-                cont, status = {"message":"unable to get data from database"},501
+                cont, status = {
+                    "message": "unable to get data from database"
+                }, 501
         else:
-            cont, status = {"mesaage": "authentication faild"},401
+            cont, status = {"mesaage": "authentication faild"}, 401
         return JSONResponse(content=cont, status_code=status)
-
 
 
 @app.post("/get_old_messages")
@@ -414,7 +488,7 @@ async def get_old_messages(request: Request):
             limit = 30
             ## find all the chats of user
             all_chats_json = get.all_chats_json(UID)
-           
+
             groups_messages = dict()
             for guid in all_chats_json.keys():
                 all_messages_dict_type = get.all_messages_json(limit, guid)
@@ -422,16 +496,20 @@ async def get_old_messages(request: Request):
                 if all_messages_dict_type:
                     groups_messages[str(guid)] = all_messages_dict_type
                 else:
-                    print(f"err while getting data of group ==>> {guid} and err is {all_messages_dict_type}")
-                    cont, status = {"message": "cant able to fetch old messages"}, 400
+                    print(
+                        f"err while getting data of group ==>> {guid} and err is {all_messages_dict_type}"
+                    )
+                    cont, status = {
+                        "message": "cant able to fetch old messages"
+                    }, 400
             #print(groups_messages)
-            cont, status = {"message":"sucessfully got messags of all chats","groups_messages":groups_messages}, 200
+            cont, status = {
+                "message": "sucessfully got messags of all chats",
+                "groups_messages": groups_messages
+            }, 200
         else:
             cont, status = {"message": "Access Denaid ! auth faild"}, 403
         return JSONResponse(content=cont, status_code=status)
-
-
-
 
 
 @app.post("/get_settings_data")
@@ -446,15 +524,19 @@ async def get_settings_data_post(request: Request):
             print(data.get('COOKIE'), users_stored_data.get('COOKIE'))
             if data.get('COOKIE') == users_stored_data.get('COOKIE'):
                 print('user verified ') if is_developement else None
-                cont, status = {"message": "Sucessfully got all details", 'credentials': users_stored_data}, 200
+                cont, status = {
+                    "message": "Sucessfully got all details",
+                    'credentials': users_stored_data
+                }, 200
             else:
-                cont, status = {'message': 'Authentication Faild weiredly'}, 400
+                cont, status = {
+                    'message': 'Authentication Faild weiredly'
+                }, 400
         else:
             cont, status = {'message': 'Cant able find you account data'}, 400
     else:
         cont, status = {'message': 'some details are missing'}, 401
     return JSONResponse(content=cont, status_code=status)
-
 
 
 @app.patch("/get_settings_data")
@@ -470,49 +552,71 @@ async def get_settings_data_patch(request: Request):
                     # details verification
                     update.personal_data(data)
                     # cont, status = {'message':'sucessfully updated data'}, 200
-                    return JSONResponse(content={'message':'sucessfully updated data'}, status_code=200)
-                    
+                    return JSONResponse(
+                        content={'message': 'sucessfully updated data'},
+                        status_code=200)
+
                     ##### ill implement thse validations soon
-                    FIRST_NAME_VALIDATION = validator.validate_first_name(data.get('FIRST_NAME'))
-                    LAST_NAME_VALIDATION = validator.validate_last_name(data.get('LAST_NAME'))
-                    EMAIL_VALIDATION = validator.validate_email(data.get('EMAIl'))
-                    PHONE_NO_VALIDATION = validator.validate.phone_no(data.get('PHONE_NO'))
+                    FIRST_NAME_VALIDATION = validator.validate_first_name(
+                        data.get('FIRST_NAME'))
+                    LAST_NAME_VALIDATION = validator.validate_last_name(
+                        data.get('LAST_NAME'))
+                    EMAIL_VALIDATION = validator.validate_email(
+                        data.get('EMAIl'))
+                    PHONE_NO_VALIDATION = validator.validate.phone_no(
+                        data.get('PHONE_NO'))
                     DOB_VALIDATION = validator.validate_dob(data.get('DOB'))
-                    PROFILE_PIC_VALIDATION = validator.validate_profile_pic_url(data.get('PROFILE_PIC'))
+                    PROFILE_PIC_VALIDATION = validator.validate_profile_pic_url(
+                        data.get('PROFILE_PIC'))
                     try:
-                        if  FIRST_NAME_VALIDATION and LAST_NAME_VALIDATION and EMAIL_VALIDATION and PHONE_NO_VALIDATION and DOB_VALIDATION and PROFILE_PIC_VALIDATION:
+                        if FIRST_NAME_VALIDATION and LAST_NAME_VALIDATION and EMAIL_VALIDATION and PHONE_NO_VALIDATION and DOB_VALIDATION and PROFILE_PIC_VALIDATION:
                             update.personal_data(data)
-                            cont, status = {'message':'sucessfully updated data'}, 200
+                            cont, status = {
+                                'message': 'sucessfully updated data'
+                            }, 200
                     except Exception as e:
-                            cont, status = {'message': e, }, 401
+                        cont, status = {
+                            'message': e,
+                        }, 401
                 else:
-                    cont, status = {'message': 'Wrong Password please Retry With currect one'}, 401
+                    cont, status = {
+                        'message':
+                        'Wrong Password please Retry With currect one'
+                    }, 401
             else:
                 # is program control is hear then user has changed email
                 # so verify new email only after that do
                 if data.get('UID') in email_change_otps_dict:
                     if data.get('EMAIL') not in get.all_emails():
-                        if email_change_otps_dict.get(data.get('UID')) == data.get('OTP'):
-                            ## ill add updatee data part also 
-                            cont, status = {'message':'sucessfully updated data'}, 200
+                        if email_change_otps_dict.get(
+                                data.get('UID')) == data.get('OTP'):
+                            ## ill add updatee data part also
+                            cont, status = {
+                                'message': 'sucessfully updated data'
+                            }, 200
                         else:
-                            cont, status = {"message": " Can't change email !! incurrect OTP"}, 401
+                            cont, status = {
+                                "message":
+                                " Can't change email !! incurrect OTP"
+                            }, 401
                     else:
-                        cont, status = {'message':'Provided Email already Associated with another account'}, 409
+                        cont, status = {
+                            'message':
+                            'Provided Email already Associated with another account'
+                        }, 409
                 else:
-                    cont, status = {'message': 'feels like you have not sended otp till yet please click on send otp button and enter the sended OTP to verify your new Email'}, 403
+                    cont, status = {
+                        'message':
+                        'feels like you have not sended otp till yet please click on send otp button and enter the sended OTP to verify your new Email'
+                    }, 403
         else:
-           cont, status = {"message":"unable to reach your data please make sure you're not modified source"}, 403
+            cont, status = {
+                "message":
+                "unable to reach your data please make sure you're not modified source"
+            }, 403
     else:
         cont, status = {"message": " Missing request data "}, 409
     return JSONResponse(content=cont, status_code=status)
-
-
-
-
-
-
-
 
 
 # @app.route('/get_settings_data', methods=['POST', 'PATCH'])
@@ -535,8 +639,7 @@ async def get_settings_data_patch(request: Request):
 #         else:
 #             return jsonify({'message': 'some details are missing'}), 401
 #         return jsonify({'message': "Access Denaid !!"}), 409
-        
-        
+
 #     elif request.method == 'PATCH':
 #         data = request.get_json()
 #         print(data)
@@ -548,8 +651,7 @@ async def get_settings_data_patch(request: Request):
 #                         # details verification
 #                         update.personal_data(data)
 #                         return jsonify({'message':'sucessfully updated data'}), 200
-                        
-                        
+
 #                         ##### ill implement thse validations soon
 #                         FIRST_NAME_VALIDATION = validator.validate_first_name(data.get('FIRST_NAME'))
 #                         LAST_NAME_VALIDATION = validator.validate_last_name(data.get('LAST_NAME'))
@@ -571,9 +673,9 @@ async def get_settings_data_patch(request: Request):
 #                     if data.get('UID') in email_change_otps_dict:
 #                         if data.get('EMAIL') not in get.all_emails():
 #                             if email_change_otps_dict.get(data.get('UID')) == data.get('OTP'):
-                                
-#                                 ## ill add updatee data part also 
-                                
+
+#                                 ## ill add updatee data part also
+
 #                                 return jsonify({'message':'sucessfully updated data'}), 200
 #                             else:
 #                                 return jsonify({"message": " Can't change email !! incurrect OTP"})
@@ -588,11 +690,6 @@ async def get_settings_data_patch(request: Request):
 #     else:
 #         return jsonify({'message': 'Method not supported'}), 501
 
-
-        
-        
-        
-        
 # @app.route("/reset_password", methods=["POST", "GET"])
 # def reset_password():
 #     if request.method == "POST":
@@ -633,12 +730,14 @@ async def get_settings_data_patch(request: Request):
 # def show_user_connected(data):
 def show_user_connected(data, ws):
     print(" new  user/clint has been connected ")
-    
+
+
 ####################################################################################
 ####################################################################################
 ############################# SOCKET IO ROUTES/EVENTS ##############################
 ####################################################################################
 ####################################################################################
+
 
 #@socketio.on("get_all_chat_list")
 #def wants_all_his_chats(data):
@@ -647,32 +746,39 @@ def wants_all_his_chats(data, ws):
     # print(f"sended data from clint is =>>>>> {data}")
     PROVIDED_UID = data.get("UID")
     ACCESS_TOKEN = data.get("TOKEN")
-    
+
     if not PROVIDED_UID or not ACCESS_TOKEN:
         return {"status_code": 401, "message": "accesToken or UID is missing"}
-    
+
     ### compare the data UID and accessTokens are valid or not from database
     UID = get.uid_by_token(ACCESS_TOKEN)
     if UID == PROVIDED_UID:
         all_chats_json = get.all_chats_json(UID)
         # print(all_chats_json)
         # print(type(all_chats_json))
-        
+
         # join the all groups
-        # so that in send_messsage event rout can 
+        # so that in send_messsage event rout can
         # broadcast the message to that group and this usesr will able to lisen for new messaages
         for room_id in all_chats_json.keys():
             socketio.join_room(room_id, UID, ws)
             # print(type(room_id))
             print(f"user {UID} enterd in room {room_id}")
-            
+
         if all_chats_json:
-            return {"message":"Sucessfully Got Chats","status_code":200, "chats":all_chats_json}
+            return {
+                "message": "Sucessfully Got Chats",
+                "status_code": 200,
+                "chats": all_chats_json
+            }
         else:
-            return {"mesaage":"Internal Server Err !", "status_code": 500}
+            return {"mesaage": "Internal Server Err !", "status_code": 500}
     else:
         print("Access Denaid !")
-        return {"status_code": 401, "message": "Access Denaid ! invalid token you need to login again"}
+        return {
+            "status_code": 401,
+            "message": "Access Denaid ! invalid token you need to login again"
+        }
 
 
 #@socketio.on("send_message")
@@ -683,12 +789,13 @@ def send_message(data, ws):
     message = data.get("MESSAGE")
     group_id = data.get("GROUP_ID")
     profile_pic = data.get("PROFILE_PIC")
-    
+
     sender_name = get.first_name(sender_id)
     if sender_id and message:
         # print(sender_id, message)
-        message_id, time_stamp, profile_pic = write_in_database.store_this_message(group_id, sender_id, sender_name, message, profile_pic)
-        
+        message_id, time_stamp, profile_pic = write_in_database.store_this_message(
+            group_id, sender_id, sender_name, message, profile_pic)
+
         # print(message_id, time_stamp)
         # socketio.emit("new_message", {
         #     "sender_id": sender_id,
@@ -698,7 +805,7 @@ def send_message(data, ws):
         #     "message_id": message_id,
         #     "time_stamp": time_stamp
         # }, ws, room=group_id)
-        
+
         message_data = {
             "SENDER_ID": sender_id,
             "SENDER_NAME": sender_name,
@@ -708,10 +815,14 @@ def send_message(data, ws):
             "TIME_STAMP": time_stamp,
             "PROFILE_PIC": profile_pic
         }
-        
-        return {"message": "message sent sucessfully", "content": message_data,"status_code":200}
-        
-        
+
+        return {
+            "message": "message sent sucessfully",
+            "content": message_data,
+            "status_code": 200
+        }
+
+
 ##@socketio.on("send_message_new_chat")
 #def send_message_new_chat(data):
 def send_message_new_chat(data, ws):
@@ -724,21 +835,26 @@ def send_message_new_chat(data, ws):
     reciever_id = group_id.rsplit("0000000000000000")[1]
     # print(group_id)
     # print(type(group_id))
-    
+
     sender_name = get.first_name(sender_id)
     # if group_id not in rooms(sid):
     if group_id not in rooms.keys():
         socketio.join_room(group_id, sender_id, ws)
         # print("runnig first")
         #write in senders chat list
-        write_in_database.add_user_in_group(sender_id, group_id, get.first_name(reciever_id) + " " + get.last_name(reciever_id))
+        write_in_database.add_user_in_group(
+            sender_id, group_id,
+            get.first_name(reciever_id) + " " + get.last_name(reciever_id))
         #write in recievers xhat list
-        write_in_database.add_user_in_group(reciever_id, group_id, get.first_name(sender_id) + " " + get.last_name(sender_id))
-        
+        write_in_database.add_user_in_group(
+            reciever_id, group_id,
+            get.first_name(sender_id) + " " + get.last_name(sender_id))
+
     # write message and get the message_id and time_stamp
-    message_id, time_stamp = write_in_database.store_this_message(group_id, sender_id, sender_name, message)
+    message_id, time_stamp = write_in_database.store_this_message(
+        group_id, sender_id, sender_name, message)
     if sender_id and message:
-       # print(sender_id, message)
+        # print(sender_id, message)
         # socketio.emit("new_message", {
         #     "sender_id": sender_id,
         #     "message": message,
@@ -746,7 +862,7 @@ def send_message_new_chat(data, ws):
         #     "message_id": message_id,
         #     "time_stamp": time_stamp
         # },ws, room=group_id)
-        
+
         message_data = {
             "SENDER_ID": sender_id,
             "MESSAGE": message,
@@ -754,7 +870,12 @@ def send_message_new_chat(data, ws):
             "MESSAGE_ID": message_id,
             "TIME_STAMP": time_stamp
         }
-        return {"message": "new message", "content": message_data,"status_code":200}
+        return {
+            "message": "new message",
+            "content": message_data,
+            "status_code": 200
+        }
+
 
 #################################₹##₹##₹###################№##
 #################################₹##₹##₹###################№##
@@ -784,22 +905,34 @@ async def websocket_handler(ws: WebSocket):
                 ####### handle the events ########
                 if event == "send_message":
                     print("called send_message")
-                    result = await send_message(data, ws) if callable(send_message) and send_message.__code__.co_flags & 0x80 else send_message(data, ws)
+                    result = await send_message(data, ws) if callable(
+                        send_message
+                    ) and send_message.__code__.co_flags & 0x80 else send_message(
+                        data, ws)
                     await ws.send_json({"event": event, "data": result})
 
                 elif event == "send_message_new_chat":
                     print("called send_message_new_chat")
-                    result = await send_message_new_chat(data, ws) if callable(send_message_new_chat) and send_message_new_chat.__code__.co_flags & 0x80 else send_message_new_chat(data, ws)
+                    result = await send_message_new_chat(data, ws) if callable(
+                        send_message_new_chat
+                    ) and send_message_new_chat.__code__.co_flags & 0x80 else send_message_new_chat(
+                        data, ws)
                     await ws.send_json({"event": event, "data": result})
 
                 elif event == "get_all_chat_list":
                     print("calling wants_all_his_chats")
-                    result = await wants_all_his_chats(data, ws) if callable(wants_all_his_chats) and wants_all_his_chats.__code__.co_flags & 0x80 else wants_all_his_chats(data, ws)
+                    result = await wants_all_his_chats(data, ws) if callable(
+                        wants_all_his_chats
+                    ) and wants_all_his_chats.__code__.co_flags & 0x80 else wants_all_his_chats(
+                        data, ws)
                     await ws.send_json({"event": event, "data": result})
 
                 elif event == "connect_user":
                     print("called show_user_connected")
-                    result = await show_user_connected(data, ws) if callable(show_user_connected) and show_user_connected.__code__.co_flags & 0x80 else show_user_connected(data, ws)
+                    result = await show_user_connected(data, ws) if callable(
+                        show_user_connected
+                    ) and show_user_connected.__code__.co_flags & 0x80 else show_user_connected(
+                        data, ws)
                     await ws.send_json({"event": event, "data": result})
 
             except Exception as e:
@@ -809,8 +942,8 @@ async def websocket_handler(ws: WebSocket):
         print("Client disconnected:", ws)
     finally:
         connected_clients.remove(ws)
-        
+
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  
+    port = int(os.environ.get("PORT", 5000))
     uvicorn.run(app, host="0.0.0.0", port=port)
