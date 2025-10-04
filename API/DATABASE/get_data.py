@@ -136,6 +136,7 @@ class get:
     
     def uid_by_cookie(COOKIE):
         try:
+            uid = None
             connection = database.connect_users_db()
             if connection:
                 cursor = connection.cursor()
@@ -144,12 +145,13 @@ class get:
                                 SELECT UID FROM users WHERE COOKIE=?
                                 """, (COOKIE,))
                 
-                uid = cursor.fetchone()
+                row = cursor.fetchone()
+                uid = row[0] if row else None
                 cursor.close()
-                return uid[0]
+            return uid
         except Exception as e:
             print("err on uid_by_cookie(COOKIE):", e)
-            return False
+            return None
         finally:
             if connection:
                 connection.close()
@@ -173,9 +175,7 @@ class get:
         finally:
             if connection:
                 connection.close()
-            
-            
-            
+                       
     def token(COOKIE):
         try:
             connection = database.connect_users_db()
@@ -190,6 +190,26 @@ class get:
         except Exception as e:
             print("err on token(COOKIE):",e)
             return False
+        finally:
+            if connection:
+                connection.close()
+
+    def profile_pic(*,UID=None,GUID=None):
+        connection = None
+        profile_pic = 'NOT FOUND'
+        try:
+            connection = database.connect_users_db() if UID else database.connect_chats_db() if GUID else None
+            if connection:
+                cursor = connection.cursor()
+                table, uid_or_guid = ('users', 'UID') if UID else ('Groups_credentials', 'GUID')
+                cursor.execute(f"""
+                    SELECT PROFILE_PIC FROM {table} WHERE {uid_or_guid} = ?
+                """, (UID or GUID,))
+                row = cursor.fetchone()
+                profile_pic = row[0] if row else "NO PROFILE FIC FOUNDD"
+            return profile_pic
+        except Exception as e:
+            return e
         finally:
             if connection:
                 connection.close()
