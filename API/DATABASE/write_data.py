@@ -119,11 +119,10 @@ class write_in_database:
             
             result = cursor.fetchone()
             print(result)
-            cursor.close()
-            return MESSAGE_ID, result[0], result [1] #.isoformat()
+            return MESSAGE_ID, result[0], result [1]
         except Exception as e:
             print("error on store_this_message(GROUP_ID, SENDER_ID, SENDER_NAME, MESSAGE):", e)
-            return False, False
+            return False, False, False
         finally:
             if connection:
                 connection.close()

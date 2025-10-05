@@ -72,8 +72,10 @@ class get:
             if connection:
                 connection.close()
 
+    @staticmethod
     def stored_otp(RAW_UID, COOKIE):
         UID = int(RAW_UID)
+        connection = None
         try:
             connection = database.connect_users_db()
             cursor = connection.cursor()
@@ -95,7 +97,9 @@ class get:
             if connection:
                 connection.close()
 
+    @staticmethod
     def password(EMAIL):
+        connection = None
         try:
             connection = database.connect_users_db()
             if connection:
@@ -114,7 +118,9 @@ class get:
             if connection:
                 connection.close()
 
+    @staticmethod
     def email(COOKIE):
+        connection = None
         try:
             connection = database.connect_users_db()
             if connection:
@@ -133,7 +139,9 @@ class get:
             if connection:
                 connection.close()
 
+    @staticmethod
     def cookie(EMAIL):
+        connection = None
         try:
             connection = database.connect_users_db()
             if connection:
@@ -152,7 +160,9 @@ class get:
             if connection:
                 connection.close()
 
+    @staticmethod
     def uid_by_email(EMAIL):
+        connection = None
         try:
             connection = database.connect_users_db()
             if connection:
@@ -173,9 +183,12 @@ class get:
             if connection:
                 connection.close()
 
+    @staticmethod
     def uid_by_cookie(COOKIE):
+        connection = None
+        uid = None
         try:
-            uid = None
+            
             connection = database.connect_users_db()
             if connection:
                 cursor = connection.cursor()
@@ -196,7 +209,9 @@ class get:
             if connection:
                 connection.close()
 
+    @staticmethod
     def uid_by_token(TOKEN):
+        connection = None
         try:
             connection = database.connect_users_db()
             if connection:
@@ -217,7 +232,9 @@ class get:
             if connection:
                 connection.close()
 
+    @staticmethod
     def token(COOKIE):
+        connection = None
         try:
             connection = database.connect_users_db()
             if connection:
@@ -259,8 +276,9 @@ class get:
         finally:
             if connection:
                 connection.close()
-
-    def first_name(RAW_UID):
+                
+    @staticmethod
+    def first_name(RAW_UID: str):
         UID = int(RAW_UID)
         try:
             connection = database.connect_users_db()

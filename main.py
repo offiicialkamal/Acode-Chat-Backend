@@ -15,6 +15,7 @@ import json
 from API.GENERAL.cookie import create_cookie
 from API.GENERAL.token import create_token
 from API.GENERAL.otp import generate_otp
+from API.GENERAL.ws_manager import SocketManager
 from API.GENERAL.data_validators import validator
 from API.GENERAL.send_verification_email import sendOTP
 from API.DATABASE.write_data import write_in_database
@@ -22,7 +23,13 @@ from API.DATABASE.get_data import get
 from API.DATABASE.update_data import update
 from GLOBAL_DATABASE_API.data_pusher import clone_replace_push_data
 
+online_users = set()
+email_change_otps_dict = dict()
+is_developement = True # for logs
+
 app = FastAPI()
+socket_manager = SocketManager(online_users)
+
 
 # Allow all origins (development)
 app.add_middleware(
@@ -34,100 +41,7 @@ app.add_middleware(
 )
 templates = Jinja2Templates(directory='templates')
 
-# application logs show or not
-is_developement = True
-connected_clients = set()
-#all comnected ckients
-rooms = dict()  # store all rooms
-
-email_change_otps_dict = dict()
-#esxample strructure
-# {
-#     "room_id1":{
-#             "live_memeber1_id": "socket id",
-#             "live_memeber2_id": "socket id"
-#         },
-#     "room_id2":{
-#             "live_memeber1_id": "socket id",
-#             "live_memeber2_id": "socket id"
-#         }
-# }
-############№####      OR
-
-# {
-#     "room1":["socket1", "socket2", "socket3"],
-#     "room2":["socket1", "socket2"]
-# }
-
-############################################################################
-############################################################################
-######################## PLACEHOLDER DATABASES #############################
-############################################################################
-############################################################################
-# originalDatabase = {
-
-#                 "sender uid ": "56354635",
-#                 "message": "hello from user 2"
-#             }
-#         },
-#         "group id 2":{
-#             "message id 1":{
-#                 "sender uid": "734736473",
-#                 "message": "hello brother"
-#             },
-#             "message id 2":{
-#                 "sender uid ": "56354635",
-#                 "message": "hello from user 2"
-#             }
-#         },
-#         "group id 3":{
-#             "message id 1":{
-#                 "sender uid": "734736473",
-#                 "message": "hello brother"
-#             },
-#             "message id 2":{
-#                 "sender uid ": "56354635",
-#                 "message": "hello from user 2"
-#             }
-#         }
-#     }
-
-# usersDatbase = {
-#     "1111":{
-#         "name": "kamal",
-#         "email": "example1@gmail.com",
-#         "cookie": "hdhsuedususus",
-#         "accessToken": "sujefbbddujssjsn"
-#     },
-#     "2222":{
-#         "name": "kamal",
-#         "email": "example1@gmail.com",
-#         "cookie": "hdhsuedususus",
-#         "accessToken": "sujefbbddujssjsn"
-#     },
-#     "3333":{
-#         "name": "kamal",
-#         "email": "example1@gmail.com",
-#         "cookie": "hdhsuedususus",
-#         "accessToken": "sujefbbddujssjsn"
-#     }
-# }
-
-
-class socketio:
-
-    def emit(self, event, raw_json_data, ws, /, *, room=None):
-        ## handle the event
-        data = json.dumps(raw_json_data)
-        if room & data.get('id') == ws:
-            ws.send({"event": event, "data": data})
-
-    @staticmethod
-    def join_room(room_id: str, user_id: str, socket_id: str):
-        global rooms
-        rooms.setdefault(str(room_id), {})[str(user_id)] = str(socket_id)
-        return True
-
+#------- ALL APPLICATION ROUTS ---------#
 
 @app.get("/")
 def home(request: Request):
@@ -151,7 +65,7 @@ def data_saver_main():
 
 
 @app.get('/sign_up')
-def signup_get():
+def signup_get(request: Request):
     return templates.TemplateResponse('sign_up.html', {
         'request': request,
         'title': 'sign-up'
@@ -160,8 +74,7 @@ def signup_get():
 
 @app.get('get_profile_pic_link/{uid}')
 def return_the_profile_link(request: Request, uid: int):
-    return JSONResponse(content={'PROFILE_PIC': get.profile_pic(uid)},
-                        status_code=200)
+    return JSONResponse(content={'PROFILE_PIC': get.profile_pic(uid)},status_code=200)
 
 
 @app.post("/sign_up")
@@ -188,7 +101,6 @@ async def signup(request: Request):
         data = await request.json()
         print(data)
         DEFAULT_CHAT_UID = "1000000000000"
-        DEFAULT_CHAT_NAME = "ACODE CHAT"
         EMAIL = data.get("EMAIL")
         all_emails = get.all_emails()
         write_in_database.add_group(
@@ -476,6 +388,26 @@ async def resend_otp(request: Request):
         return JSONResponse(content=cont, status_code=status)
 
 
+@app.post("/get_all_chats")
+async def get_all_chat(request: Request):
+    cont, status = None, None
+    data = await request.json()
+    print(data)
+    COOKIE = data.get("COOKIE")
+    UID = data.get("UID")
+    if get.uid_by_cookie(COOKIE) == UID:
+        if all_chats_json := get.all_chats_json(UID):
+            cont, status = {
+                "message": "sucessfully got all chats",
+                "chats": all_chats_json
+            }, 200
+        else:
+            cont, status = {"message": "Chats not found"}, 404
+    else:
+        cont, status = {"message": "Access Denaid ! auth faild"}, 403
+    return JSONResponse(content=cont, status_code=status)
+
+        
 @app.post("/get_old_messages")
 async def get_old_messages(request: Request):
     if True:
@@ -726,8 +658,6 @@ async def get_settings_data_patch(request: Request):
 #         return jsonify({"message": f"User {user_id} ed group {group_id}"}), 200
 
 
-#@socketio.on("connect_user")
-# def show_user_connected(data):
 def show_user_connected(data, ws):
     print(" new  user/clint has been connected ")
 
@@ -738,52 +668,39 @@ def show_user_connected(data, ws):
 ####################################################################################
 ####################################################################################
 
-
-#@socketio.on("get_all_chat_list")
-#def wants_all_his_chats(data):
-def wants_all_his_chats(data, ws):
-    # clint sends a json object im storing that json object on data variable
-    # print(f"sended data from clint is =>>>>> {data}")
+async def wants_all_his_chats(data, ws):
     PROVIDED_UID = data.get("UID")
     ACCESS_TOKEN = data.get("TOKEN")
 
     if not PROVIDED_UID or not ACCESS_TOKEN:
-        return {"status_code": 401, "message": "accesToken or UID is missing"}
+        content = {"status_code": 401, "message": "accesToken or UID is missing"}
 
-    ### compare the data UID and accessTokens are valid or not from database
     UID = get.uid_by_token(ACCESS_TOKEN)
     if UID == PROVIDED_UID:
         all_chats_json = get.all_chats_json(UID)
-        # print(all_chats_json)
-        # print(type(all_chats_json))
-
         # join the all groups
         # so that in send_messsage event rout can
         # broadcast the message to that group and this usesr will able to lisen for new messaages
         for room_id in all_chats_json.keys():
-            socketio.join_room(room_id, UID, ws)
-            # print(type(room_id))
+            socket_manager.join_room(room_id, UID, ws)
             print(f"user {UID} enterd in room {room_id}")
 
         if all_chats_json:
-            return {
+            content = {
                 "message": "Sucessfully Got Chats",
-                "status_code": 200,
                 "chats": all_chats_json
             }
         else:
-            return {"mesaage": "Internal Server Err !", "status_code": 500}
+            content = {"mesaage": "Internal Server Err !", "status_code": 500}
     else:
-        print("Access Denaid !")
-        return {
+        content = {
             "status_code": 401,
             "message": "Access Denaid ! invalid token you need to login again"
         }
+    await ws.send_json(content)
+    
 
-
-#@socketio.on("send_message")
-#def send_message(data):
-def send_message(data, ws):
+def send_message(event, data, ws):
     # print(data)
     sender_id = data.get("SENDER_ID")
     message = data.get("MESSAGE")
@@ -793,18 +710,7 @@ def send_message(data, ws):
     sender_name = get.first_name(sender_id)
     if sender_id and message:
         # print(sender_id, message)
-        message_id, time_stamp, profile_pic = write_in_database.store_this_message(
-            group_id, sender_id, sender_name, message, profile_pic)
-
-        # print(message_id, time_stamp)
-        # socketio.emit("new_message", {
-        #     "sender_id": sender_id,
-        #     "sender_name": sender_name,
-        #     "message": message,
-        #     "group_id": group_id,
-        #     "message_id": message_id,
-        #     "time_stamp": time_stamp
-        # }, ws, room=group_id)
+        message_id, time_stamp, profile_pic = write_in_database.store_this_message(group_id, sender_id, sender_name, message, profile_pic)
 
         message_data = {
             "SENDER_ID": sender_id,
@@ -816,6 +722,9 @@ def send_message(data, ws):
             "PROFILE_PIC": profile_pic
         }
 
+        ws.send_json({"event": event, "data": message_data})
+        socket_manager.emit(event, message_data, ws, room=group_id)
+
         return {
             "message": "message sent sucessfully",
             "content": message_data,
@@ -823,46 +732,24 @@ def send_message(data, ws):
         }
 
 
-##@socketio.on("send_message_new_chat")
+##@socketManager.on("send_message_new_chat")
 #def send_message_new_chat(data):
-def send_message_new_chat(data, ws):
-    # print("this is new xhat",data)
-    # sid = request.sid
-    # print(type(rooms(sid)))
+def send_message_new_chat(event, data, ws):
     sender_id = data.get("SENDER_ID")
     message = data.get("MESSAGE")
     group_id = data.get("GROUP_ID")
+    profile_pic = data.get("PROFILE_PIC")
+    
     reciever_id = group_id.rsplit("0000000000000000")[1]
-    # print(group_id)
-    # print(type(group_id))
-
     sender_name = get.first_name(sender_id)
-    # if group_id not in rooms(sid):
-    if group_id not in rooms.keys():
-        socketio.join_room(group_id, sender_id, ws)
-        # print("runnig first")
-        #write in senders chat list
-        write_in_database.add_user_in_group(
-            sender_id, group_id,
-            get.first_name(reciever_id) + " " + get.last_name(reciever_id))
-        #write in recievers xhat list
-        write_in_database.add_user_in_group(
-            reciever_id, group_id,
-            get.first_name(sender_id) + " " + get.last_name(sender_id))
+    
+    socket_manager.join_room(group_id, sender_id, ws)
+    write_in_database.add_user_in_group(sender_id, group_id, str(get.first_name(reciever_id) + " " + get.last_name(reciever_id)))
+    write_in_database.add_user_in_group(reciever_id, group_id, str(get.first_name(sender_id) + " " + get.last_name(sender_id)))     #write in recievers xhat list
 
     # write message and get the message_id and time_stamp
-    message_id, time_stamp = write_in_database.store_this_message(
-        group_id, sender_id, sender_name, message)
+    message_id, time_stamp, profile_pic = write_in_database.store_this_message(group_id, sender_id, sender_name, message, profile_pic)
     if sender_id and message:
-        # print(sender_id, message)
-        # socketio.emit("new_message", {
-        #     "sender_id": sender_id,
-        #     "message": message,
-        #     "group_id": group_id,
-        #     "message_id": message_id,
-        #     "time_stamp": time_stamp
-        # },ws, room=group_id)
-
         message_data = {
             "SENDER_ID": sender_id,
             "MESSAGE": message,
@@ -870,22 +757,45 @@ def send_message_new_chat(data, ws):
             "MESSAGE_ID": message_id,
             "TIME_STAMP": time_stamp
         }
+        ws.send_json({"event": event, "data": message_data})
+        socket_manager.emit(event, data, ws, room=group_id)
         return {
             "message": "new message",
             "content": message_data,
             "status_code": 200
         }
 
+####################################################################
+##########           WEBSOCKET HANDLERS PART              ##########
+####################################################################
+async def handle_socket(ws: WebSocket, event: str, data: dict):
+    print('this is data ', data, type(data))
+    ####### handle the events ########
+    if event == "send_message":
+        print("called send_message")
+        result = send_message(event, data, ws)
+        await ws.send_json({"event": event, "data": result})
 
-#################################₹##₹##₹###################№##
-#################################₹##₹##₹###################№##
-#######  USE THE flask-socks INSTED OF flask_socketIO  #######
-#################################₹##₹##₹###################№##
-#################################₹##₹##₹###################№##
+    elif event == "send_message_new_chat":
+        print("called send_message_new_chat")
+        send_message_new_chat(event, data, ws)
+
+    #-------- clients calls fisrt after connection ------#
+    elif event == "get_all_messages":
+        await wants_all_his_chats(data, ws) #hear we perform Join_room()
+
+    #-------- NOT IMPLEMENTED/USELESS --------#
+    elif event == "connect_user":
+        result = show_user_connected(data, ws)
+        await ws.send_json({"event": event, "data": result})
+        
+    return data.get("SENDER_ID")
+
 @app.websocket("/ws")
 async def websocket_handler(ws: WebSocket):
     await ws.accept()
-    connected_clients.add(ws)
+    online_users.add(ws)
+    user_id = None
     try:
         while True:
             print("client connected", ws)
@@ -900,48 +810,19 @@ async def websocket_handler(ws: WebSocket):
 
                 event = msg.get("event")
                 data = msg.get("data")
-
-                print('this is data ', data, type(data))
-                ####### handle the events ########
-                if event == "send_message":
-                    print("called send_message")
-                    result = await send_message(data, ws) if callable(
-                        send_message
-                    ) and send_message.__code__.co_flags & 0x80 else send_message(
-                        data, ws)
-                    await ws.send_json({"event": event, "data": result})
-
-                elif event == "send_message_new_chat":
-                    print("called send_message_new_chat")
-                    result = await send_message_new_chat(data, ws) if callable(
-                        send_message_new_chat
-                    ) and send_message_new_chat.__code__.co_flags & 0x80 else send_message_new_chat(
-                        data, ws)
-                    await ws.send_json({"event": event, "data": result})
-
-                elif event == "get_all_chat_list":
-                    print("calling wants_all_his_chats")
-                    result = await wants_all_his_chats(data, ws) if callable(
-                        wants_all_his_chats
-                    ) and wants_all_his_chats.__code__.co_flags & 0x80 else wants_all_his_chats(
-                        data, ws)
-                    await ws.send_json({"event": event, "data": result})
-
-                elif event == "connect_user":
-                    print("called show_user_connected")
-                    result = await show_user_connected(data, ws) if callable(
-                        show_user_connected
-                    ) and show_user_connected.__code__.co_flags & 0x80 else show_user_connected(
-                        data, ws)
-                    await ws.send_json({"event": event, "data": result})
-
+                user_id = await handle_socket(ws, event, data)
+                
             except Exception as e:
                 print("error:", e)
 
     except WebSocketDisconnect:
         print("Client disconnected:", ws)
+        if user_id:
+            socket_manager.leave_rooms(user_id)
     finally:
-        connected_clients.remove(ws)
+        online_users.remove(ws)
+        
+        
 
 
 if __name__ == "__main__":
