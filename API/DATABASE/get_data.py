@@ -1,8 +1,8 @@
 from .connect import database
 from .createDatabase import create_database
-from datetime import datetime
-import sys
-import json
+# from datetime import datetime
+# import sys
+# import json
 
 
 class get:
@@ -188,17 +188,14 @@ class get:
         connection = None
         uid = None
         try:
-            
             connection = database.connect_users_db()
             if connection:
+                print("connection sucessfull")
                 cursor = connection.cursor()
-
-                cursor.execute(
-                    """
-                                SELECT UID FROM users WHERE COOKIE=?
-                                """, (COOKIE, ))
-
+                cursor.execute("""SELECT UID FROM users WHERE COOKIE=?""",
+                               (COOKIE, ))
                 row = cursor.fetchone()
+                print(row)
                 uid = row[0] if row else None
                 cursor.close()
             return uid
@@ -276,9 +273,10 @@ class get:
         finally:
             if connection:
                 connection.close()
-                
+
     @staticmethod
     def first_name(RAW_UID: str):
+        connection = None
         UID = int(RAW_UID)
         try:
             connection = database.connect_users_db()
@@ -300,7 +298,9 @@ class get:
             if connection:
                 connection.close()
 
+    @staticmethod
     def last_name(RAW_UID):
+        connection = None
         UID = int(RAW_UID)
         try:
             connection = database.connect_users_db()
@@ -317,8 +317,11 @@ class get:
             if connection:
                 connection.close()
 
+    @staticmethod
     def all_chats_json(RAW_UID):
+        connection = None
         UID = int(RAW_UID)
+        chats_json = {}
         try:
             connection = database.connect_chat_lists_db()
             if connection:
@@ -337,15 +340,17 @@ class get:
                         "CREATION_DATE": chat[3]
                     }
                 cursor.close()
-                return chats_json
+                return chats_json if chats_json else {}
         except Exception as e:
             print(f"erro while getting the chats of {UID} ==>> {e}")
-            return False
+            return {}
         finally:
             if connection:
                 connection.close()
-
+    @staticmethod
     def all_messages_json(limit, guid):
+        connection = None
+        messages_of_this_group_in_json_dict = {}
         try:
             connection = database.connect_messages()
             if connection:
@@ -360,7 +365,7 @@ class get:
                                 """)
                 messages_of_this_group_in_json_dict = {}
                 rows_list_type = cursor.fetchall()
-                print(rows_list_type)
+                # print(rows_list_type)
                 for row_tupple in rows_list_type:
                     messages_of_this_group_in_json_dict[str(row_tupple[0])] = {
                         "SENDER_ID": row_tupple[1],
@@ -373,12 +378,13 @@ class get:
                 return messages_of_this_group_in_json_dict
         except Exception as e:
             print("err on all_messages_json", e)
-            return False
+            return {}
         finally:
             if connection:
                 connection.close()
-
+    @staticmethod
     def all_personal_data(UID):
+        connection = None
         try:
             connection = database.connect_users_db()
             if connection:
@@ -389,9 +395,9 @@ class get:
                  """, (UID, ))
 
                 fc = cursor.fetchall()
-                print('its fc data', fc)
+                # print('its fc data', fc)
                 raw_data = fc[0]
-                print('its raw data', raw_data)
+                # print('its raw data', raw_data)
                 data = {
                     'FIRST_NAME': raw_data[1],
                     'LAST_NAME': raw_data[2],
@@ -405,7 +411,7 @@ class get:
                 return data
         except Exception as e:
             print(e)
-            return None
+            return {}
         finally:
             if connection:
                 connection.close()

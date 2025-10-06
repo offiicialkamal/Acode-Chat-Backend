@@ -22,7 +22,9 @@ class database:
                 if not os.path.exists('DB'):
                         os.makedirs('DB')
                 return sqlite3.connect(path)
-                
+
+        
+        @staticmethod        
         def connect_chat_lists_db():
                 path = "DB/chats_lists.db"
                 if not os.path.exists("DB"):

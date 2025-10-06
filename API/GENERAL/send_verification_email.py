@@ -1,6 +1,6 @@
 #content://com.android.externalstorage.documents/tree/primary%3AACODE%20samsung%20phone%2FACODE::primary:ACODE samsung phone/ACODE/Acode-Chat-Backend/API/GENERAL/send_verification_email.pyimport random
-import random
-import time
+# import random
+# import time
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -48,6 +48,7 @@ def send_email(to_email, subject, body):
         msg["To"] = to_email
         msg["Subject"] = subject
         msg.attach(MIMEText(body, "plain"))
+        msg.attach(MIMEText("<h1> HELLO BROTHER </h1>", "html"))
 
         # --- Connect to Gmail SMTP ---
         server = smtplib.SMTP("smtp.gmail.com", 587, timeout=20)

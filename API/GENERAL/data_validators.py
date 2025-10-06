@@ -1,6 +1,3 @@
-
-
-
 class validator:
     # because of i always not need to verify the all field so ill define all function as global function 
     # each method should return an json object as response 

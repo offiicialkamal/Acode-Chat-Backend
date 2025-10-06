@@ -25,11 +25,10 @@ from GLOBAL_DATABASE_API.data_pusher import clone_replace_push_data
 
 online_users = set()
 email_change_otps_dict = dict()
-is_developement = True # for logs
+is_developement = True  # for logs
 
 app = FastAPI()
 socket_manager = SocketManager(online_users)
-
 
 # Allow all origins (development)
 app.add_middleware(
@@ -42,6 +41,7 @@ app.add_middleware(
 templates = Jinja2Templates(directory='templates')
 
 #------- ALL APPLICATION ROUTS ---------#
+
 
 @app.get("/")
 def home(request: Request):
@@ -74,7 +74,8 @@ def signup_get(request: Request):
 
 @app.get('get_profile_pic_link/{uid}')
 def return_the_profile_link(request: Request, uid: int):
-    return JSONResponse(content={'PROFILE_PIC': get.profile_pic(uid)},status_code=200)
+    return JSONResponse(content={'PROFILE_PIC': get.profile_pic(uid)},
+                        status_code=200)
 
 
 @app.post("/sign_up")
@@ -101,6 +102,7 @@ async def signup(request: Request):
         data = await request.json()
         print(data)
         DEFAULT_CHAT_UID = "1000000000000"
+        DEFAULT_CHAT_NAME = "ACODE CHAT"
         EMAIL = data.get("EMAIL")
         all_emails = get.all_emails()
         write_in_database.add_group(
@@ -244,7 +246,7 @@ async def login(request: Request):
                                 "COOKIE": COOKIE,
                                 "UID": UID,
                                 "redirect": True
-                            }, 401
+                            }, 403
                     else:
                         cont, status = {"message": "invalid password"}, 401
                 else:
@@ -273,12 +275,9 @@ async def return_token(request: Request):
         cont, status = None, None
         if PROVIDED_COOKIE and PROVIDED_UID:
             ORIGINAL_UID = get.uid_by_cookie(PROVIDED_COOKIE)
-
-            print(
-                type(ORIGINAL_UID), ORIGINAL_UID is not None
-                and ORIGINAL_UID == PROVIDED_UID,
-                type(ORIGINAL_UID is not None
-                     and ORIGINAL_UID == PROVIDED_UID))
+            print(PROVIDED_COOKIE, PROVIDED_UID)
+            print(type(ORIGINAL_UID), ORIGINAL_UID is not None
+                  and ORIGINAL_UID == PROVIDED_UID)
             if ORIGINAL_UID is not None and ORIGINAL_UID == PROVIDED_UID:
                 stored_otp = get.stored_otp(ORIGINAL_UID, PROVIDED_COOKIE)
                 #  print(len(str(stored_otp)))
@@ -291,13 +290,13 @@ async def return_token(request: Request):
                     }, 200
                 else:
                     #sendOTP(get.email(PROVIDED_COOKIE),str(stored_otp), get.first_name(ORIGINAL_UID),"otpForNewAcc")
-                    cont, status = {"message": "Verification pending"}, 409
+                    cont, status = {"message": "Verification pending"}, 403
             else:
-                cont, status = {"message": "Access Denaid ! Login needed"}, 400
+                cont, status = {"message": "Access Denaid ! Login needed"}, 401
         else:
             cont, status = {
                 "mesaage": "Access Denaid ! missing cookie or uid"
-            }, 403
+            }, 422
         return JSONResponse(content=cont, status_code=status)
 
 
@@ -407,7 +406,7 @@ async def get_all_chat(request: Request):
         cont, status = {"message": "Access Denaid ! auth faild"}, 403
     return JSONResponse(content=cont, status_code=status)
 
-        
+
 @app.post("/get_old_messages")
 async def get_old_messages(request: Request):
     if True:
@@ -668,12 +667,16 @@ def show_user_connected(data, ws):
 ####################################################################################
 ####################################################################################
 
+
 async def wants_all_his_chats(data, ws):
     PROVIDED_UID = data.get("UID")
     ACCESS_TOKEN = data.get("TOKEN")
 
     if not PROVIDED_UID or not ACCESS_TOKEN:
-        content = {"status_code": 401, "message": "accesToken or UID is missing"}
+        content = {
+            "status_code": 401,
+            "message": "accesToken or UID is missing"
+        }
 
     UID = get.uid_by_token(ACCESS_TOKEN)
     if UID == PROVIDED_UID:
@@ -698,9 +701,9 @@ async def wants_all_his_chats(data, ws):
             "message": "Access Denaid ! invalid token you need to login again"
         }
     await ws.send_json(content)
-    
 
-def send_message(event, data, ws):
+
+async def send_message(event, data, ws):
     # print(data)
     sender_id = data.get("SENDER_ID")
     message = data.get("MESSAGE")
@@ -710,7 +713,8 @@ def send_message(event, data, ws):
     sender_name = get.first_name(sender_id)
     if sender_id and message:
         # print(sender_id, message)
-        message_id, time_stamp, profile_pic = write_in_database.store_this_message(group_id, sender_id, sender_name, message, profile_pic)
+        message_id, time_stamp, profile_pic = write_in_database.store_this_message(
+            group_id, sender_id, sender_name, message, profile_pic)
 
         message_data = {
             "SENDER_ID": sender_id,
@@ -721,9 +725,8 @@ def send_message(event, data, ws):
             "TIME_STAMP": time_stamp,
             "PROFILE_PIC": profile_pic
         }
-
-        ws.send_json({"event": event, "data": message_data})
-        socket_manager.emit(event, message_data, ws, room=group_id)
+        await ws.send_json({"event": event, "data": message_data})
+        await socket_manager.emit(event, message_data, ws, room=group_id)
 
         return {
             "message": "message sent sucessfully",
@@ -734,21 +737,27 @@ def send_message(event, data, ws):
 
 ##@socketManager.on("send_message_new_chat")
 #def send_message_new_chat(data):
-def send_message_new_chat(event, data, ws):
+async def send_message_new_chat(event, data, ws):
     sender_id = data.get("SENDER_ID")
     message = data.get("MESSAGE")
     group_id = data.get("GROUP_ID")
     profile_pic = data.get("PROFILE_PIC")
-    
+
     reciever_id = group_id.rsplit("0000000000000000")[1]
     sender_name = get.first_name(sender_id)
-    
+
     socket_manager.join_room(group_id, sender_id, ws)
-    write_in_database.add_user_in_group(sender_id, group_id, str(get.first_name(reciever_id) + " " + get.last_name(reciever_id)))
-    write_in_database.add_user_in_group(reciever_id, group_id, str(get.first_name(sender_id) + " " + get.last_name(sender_id)))     #write in recievers xhat list
+    write_in_database.add_user_in_group(
+        sender_id, group_id,
+        str(get.first_name(reciever_id) + " " + get.last_name(reciever_id)))
+    write_in_database.add_user_in_group(
+        reciever_id, group_id,
+        str(get.first_name(sender_id) + " " +
+            get.last_name(sender_id)))  #write in recievers xhat list
 
     # write message and get the message_id and time_stamp
-    message_id, time_stamp, profile_pic = write_in_database.store_this_message(group_id, sender_id, sender_name, message, profile_pic)
+    message_id, time_stamp, profile_pic = write_in_database.store_this_message(
+        group_id, sender_id, sender_name, message, profile_pic)
     if sender_id and message:
         message_data = {
             "SENDER_ID": sender_id,
@@ -757,39 +766,41 @@ def send_message_new_chat(event, data, ws):
             "MESSAGE_ID": message_id,
             "TIME_STAMP": time_stamp
         }
-        ws.send_json({"event": event, "data": message_data})
-        socket_manager.emit(event, data, ws, room=group_id)
+
+        await ws.send_json({"event": event, "data": message_data})
+        await socket_manager.emit(event, data, ws, room=group_id)
         return {
             "message": "new message",
             "content": message_data,
             "status_code": 200
         }
 
+
 ####################################################################
 ##########           WEBSOCKET HANDLERS PART              ##########
 ####################################################################
 async def handle_socket(ws: WebSocket, event: str, data: dict):
-    print('this is data ', data, type(data))
+    # print('this is data ', data, type(data))
     ####### handle the events ########
     if event == "send_message":
         print("called send_message")
-        result = send_message(event, data, ws)
-        await ws.send_json({"event": event, "data": result})
+        await send_message(event, data, ws)
 
     elif event == "send_message_new_chat":
         print("called send_message_new_chat")
-        send_message_new_chat(event, data, ws)
+        await send_message_new_chat(event, data, ws)
 
     #-------- clients calls fisrt after connection ------#
     elif event == "get_all_messages":
-        await wants_all_his_chats(data, ws) #hear we perform Join_room()
+        await wants_all_his_chats(data, ws)  #hear we perform Join_room()
 
     #-------- NOT IMPLEMENTED/USELESS --------#
     elif event == "connect_user":
         result = show_user_connected(data, ws)
         await ws.send_json({"event": event, "data": result})
-        
+
     return data.get("SENDER_ID")
+
 
 @app.websocket("/ws")
 async def websocket_handler(ws: WebSocket):
@@ -798,20 +809,20 @@ async def websocket_handler(ws: WebSocket):
     user_id = None
     try:
         while True:
-            print("client connected", ws)
+            # print("client connected", ws)
 
             # receive as text directly
             raw_text = await ws.receive_text()
-            print("raw:", raw_text)
+            # print("raw:", raw_text)
 
             try:
                 msg = json.loads(raw_text)
-                print(msg, type(msg))
+                # print(msg, type(msg))
 
                 event = msg.get("event")
                 data = msg.get("data")
                 user_id = await handle_socket(ws, event, data)
-                
+
             except Exception as e:
                 print("error:", e)
 
@@ -821,8 +832,6 @@ async def websocket_handler(ws: WebSocket):
             socket_manager.leave_rooms(user_id)
     finally:
         online_users.remove(ws)
-        
-        
 
 
 if __name__ == "__main__":

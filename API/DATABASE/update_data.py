@@ -3,6 +3,7 @@ from .connect import database
 #in future ill add some more metjods like passwod mail number dob changing
 class update:
     def otp(new_otp, UID, COOKIE):
+        connection = None
         try:
             connection = database.connect_users_db()
             if connection:

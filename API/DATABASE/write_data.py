@@ -2,8 +2,11 @@ from .connect import database
 from .createDatabase import create_database
 from datetime import datetime
 class write_in_database:
+    
+    @staticmethod
     def add_user(FIRST_NAME, LAST_NAME, EMAIL, IS_MAIL_OTP, DOB, PHONE_NO, IP, CITY,PASSWORD, TOKEN, COOKIE, PROFILE_PIC):
         create_database.create_users_database()
+        connection = None
         try:
             connection = database.connect_users_db()
             cursor = connection.cursor()
@@ -35,9 +38,11 @@ class write_in_database:
     # ill use it when a user creates a group
     # it will add new group to all chats database
     # and additionally return that new groups uid
+    @staticmethod
     def add_group(GNAME, GUID=None):
         #create table if not exists
         create_database.create_message_list_database()
+        connection = None
         try:
             # imsert new group 
             connection = database.connect_chat_lists_db()
@@ -71,9 +76,11 @@ class write_in_database:
     # this will add grpup to users table
     # this table will named by each users UID
     # this table will be returned to show all chat list for user
+    @staticmethod
     def add_user_in_group(RAW_UID ,RAW_GUID, GNAME):
         UID = int(RAW_UID)
         GUID = int(RAW_GUID)
+        connection = None
         try:
             ## uid is hader or name of create_chats_table_for_this_new_user
             ## GUID is groups uniq id
@@ -100,6 +107,7 @@ class write_in_database:
     # it will store messages
     # each group id represents that specific table
     # this table contains all messages 
+    @staticmethod
     def store_this_message(GROUP_ID, SENDER_ID, SENDER_NAME, MESSAGE, PROFILE_PIC):
         create_database.create_chat_database_table(GROUP_ID)
         connection = None
@@ -112,13 +120,13 @@ class write_in_database:
             """, (int(SENDER_ID), SENDER_NAME, MESSAGE, PROFILE_PIC))
             connection.commit()
             MESSAGE_ID = cursor.lastrowid
-            print(MESSAGE_ID)
+            # print(MESSAGE_ID)
             cursor.execute(f"""
                             SELECT TIME_STAMP, PROFILE_PIC FROM G_{str(GROUP_ID)} WHERE MESSAGE_ID = ?
                             """,(MESSAGE_ID,))
             
             result = cursor.fetchone()
-            print(result)
+            # print(result)
             return MESSAGE_ID, result[0], result [1]
         except Exception as e:
             print("error on store_this_message(GROUP_ID, SENDER_ID, SENDER_NAME, MESSAGE):", e)
