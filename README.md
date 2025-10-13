@@ -53,7 +53,7 @@ this repository is `MIT LICENCED` and anyone can able to modify/reuse it for his
 
 
  ## License
- This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+ This project is licensed under the Apache 2.0 - see the [LICENSE](LICENSE) file for details.
 
 ## 🚀 Setup and Installation
 
@@ -66,8 +66,8 @@ this repository is `MIT LICENCED` and anyone can able to modify/reuse it for his
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/hackesofice/Acode-Chat-Backend.git>
-cd acode-chat-backend
+git clone https://github.com/hackesofice/Chat-API.git>
+cd Chat-API
 ```
 
 ### 2. Install Dependencies
@@ -171,6 +171,12 @@ The server broadcasts the full message details, including the newly generated da
 }
 ```
 
+
+# Contributions
+
+i love contributions, its grate to make improvements togather, just make sure you'll provide proper desciption about any kind of changes or improvements you have done in the project.
+
+
 # ⚙️ Development Notes 
 
 **Custom Imports**: The functionality heavily relies on custom local modules (e.g., `API/GENERAL/*, API/DATABASE/*`).
@@ -180,3 +186,6 @@ The server broadcasts the full message details, including the newly generated da
 **CORS**: `allow_origins=["*"]` is set for development. Restrict this to your client application's domain(s) in production.
 
 **OTP Verification**: The verification check relies on the length of the stored OTP (`if len(str(otp)) == 1:`), where `0` or `1` indicates verification, and a 6-digit number indicates pending verification.
+
+
+
