@@ -173,9 +173,10 @@ The server broadcasts the full message details, including the newly generated da
 
 # ⚙️ Development Notes 
 
-Custom Imports: The functionality heavily relies on custom local modules (e.g., `API/GENERAL/*, API/DATABASE/*`).
+**Custom Imports**: The functionality heavily relies on custom local modules (e.g., `API/GENERAL/*, API/DATABASE/*`).
 
-Security: The application uses simple string comparison for password checks (`if PROVIDED_PASS == STORED_PASSWORD:`).
-CORS: `allow_origins=["*"]` is set for development. Restrict this to your client application's domain(s) in production.
+**Security**: The application uses simple string comparison for password checks (`if PROVIDED_PASS == STORED_PASSWORD:`).
 
-OTP Verification: The verification check relies on the length of the stored OTP (`if len(str(otp)) == 1:`), where `0` or `1` indicates verification, and a 6-digit number indicates pending verification.
+**CORS**: `allow_origins=["*"]` is set for development. Restrict this to your client application's domain(s) in production.
+
+**OTP Verification**: The verification check relies on the length of the stored OTP (`if len(str(otp)) == 1:`), where `0` or `1` indicates verification, and a 6-digit number indicates pending verification.
