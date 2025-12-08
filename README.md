@@ -38,12 +38,12 @@ This is a real-time chat application backend built using the **FastAPI** framewo
 - [x] signin
 - [x] verification
 - [x] public api
-- [] strict security
-- []  ORM implementation
-- []  data hashing
-- []  route protection
-- []  rate limitation
-- []  attack protection
+- [ ] strict security
+- [ ]  ORM implementation
+- [ ]  data hashing
+- [ ]  route protection
+- [ ]  rate limitation
+- [ ]  attack protection
 
 
 <!-- ## LICENCE
